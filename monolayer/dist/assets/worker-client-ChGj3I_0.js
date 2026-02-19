@@ -1,0 +1,1 @@
+function c(t,o){const e=new SharedWorker(new URL("/assets/simulation-worker-CXPM7fPa.js",import.meta.url),{type:"module",name:"simulation-worker"}).port;return e.onmessage=s=>o(s.data),e.start(),t.length>0&&e.postMessage({type:"subscribe",data:{topics:t}}),{port:e,send:s=>e.postMessage(s),disconnect:()=>{e.postMessage({type:"leave"}),e.close()}}}export{c};

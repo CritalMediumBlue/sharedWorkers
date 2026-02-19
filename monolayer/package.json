@@ -1,0 +1,26 @@
+{
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "dependency-cruiser": "^17.3.5",
+    "eslint": "^10.0.0",
+    "globals": "^17.3.0",
+    "jsdoc": "^4.0.4",
+    "vite": "^7.3.0",
+    "vitest": "^4.0.16"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "docs": "jsdoc -c jsdoc.conf.json && open docs/index.html ",
+    "dependency": "npx depcruise src --include-only '^src' --output-type dot | dot -T svg > dependency-graph.svg",
+    "test": "vitest --ui --watch"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "handy-diffusion": "^1.0.10",
+    "three": "^0.182.0",
+    "tweakpane": "^4.0.5"
+  }
+}
