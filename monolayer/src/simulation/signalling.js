@@ -1,7 +1,7 @@
 import { getAdjustedCoordinates } from "./grid.js";
 import { ADI , setADIProperties, updateSinksAndSources} from "handy-diffusion";
 import { setModel, setParameter, extSpeciesNames, concentrationsState, parameters } from "./intracellular/cytoplasmState.js";
-import { updateAllCytoplasms, calculateResultArray } from "./intracellular/cytoplasmUpdater.js";
+import { updateAllCytoplasms, calculateResultArray, prepareForReactions } from "./intracellular/cytoplasmUpdater.js";
 export { setModel, setParameter };
 
 
@@ -35,16 +35,21 @@ export const updateSignallingCircuit = (currentBacteria, HEIGHT, WIDTH, dx, dura
     setADIProperties(WIDTH, HEIGHT, parameters.DiffusionRate, dx, deltaT);
 
     const totalNumberOfADIIterations = Math.round(timeLapse / deltaT);
+        //prepareForReactions(positionMap, concentrationsState,dx);
+
 
     for (let i = 0; i < numberOfIterations; i++) {
         clearConcentrationSources();
 
-        updateAllCytoplasms(positionMap, timeLapse, concentrationsState);
+        updateAllCytoplasms(positionMap, timeLapse, concentrationsState, dx);
 
         extSpeciesNames.forEach((speciesName) => {
             updateSinksAndSources(concentrationsState[speciesName].sinks, concentrationsState[speciesName].sources)
             ADI(concentrationsState[speciesName].conc, totalNumberOfADIIterations, false);
         });
+
+        //updateAllCytoplasms(positionMap, timeLapse/2, concentrationsState, dx);
+
     }
 
     const resultArray = calculateResultArray(currentBacteria);

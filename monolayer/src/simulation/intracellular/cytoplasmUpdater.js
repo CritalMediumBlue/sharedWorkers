@@ -18,29 +18,35 @@ import {
 
 
 
-export const updateAllCytoplasms = (positionMap, timeLapse, concentrationsState) => {
-    let stepCounter = 0;
+export const updateAllCytoplasms = (positionMap, timeLapse, concentrationsState, dx) => {
 
     for (const [id, idx] of positionMap.entries()) {
-        stepCounter++;
-        const numberSubsteps = 3
+        
 
-        for (let i=1; i<=numberSubsteps; i++){
-                inheritConcentrations(id, idx, concentrationsState);
-                simulateConcentrations(  speciesNames,
+     
+        inheritConcentrations(id, idx, concentrationsState);
+        simulateConcentrations(  speciesNames,
                     interiorManager,
                     variables,
                     parameters, 
                     intEquations,
-                    id, timeLapse/numberSubsteps
+                    id, timeLapse
                 );
-        }
+        
 
-        secretedSpeciesUpdate(variables, parameters, secretedSpecies, exteriorManager, extEquations, id, idx, concentrationsState);
+        secretedSpeciesUpdate(variables, parameters, secretedSpecies, exteriorManager, extEquations, id, idx, concentrationsState, dx);
     }
 
 };
- 
+
+
+
+export const prepareForReactions = (positionMap, concentrationsState,dx) => {
+    for (const [id, idx] of positionMap.entries()) {
+        inheritConcentrations(id, idx, concentrationsState);
+        secretedSpeciesUpdate(variables, parameters, secretedSpecies, exteriorManager, extEquations, id, idx, concentrationsState, dx);
+    }
+}
   
 
 // 

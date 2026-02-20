@@ -27,12 +27,15 @@ export function secretedSpeciesUpdate(
     extEquations,
     ID,
     idx,
-    concentrationsState) {
+    concentrationsState,
+    dx
+) {
+    const squareDx = dx * dx;
     for (let i = 0, len = secretedSpecies.length; i < len; i++) {
         const speciesName = secretedSpecies[i];
         const concState = concentrationsState[speciesName]; // Cache the lookup
-        concState.sources[idx] += extEquations[speciesName](variables, parameters) ;
-        concState.sinks[idx] += parameters.Kin ;
+        concState.sources[idx] += extEquations[speciesName](variables, parameters) / squareDx ;
+        concState.sinks[idx] += parameters.Kin / squareDx ;
         exteriorManager[speciesName].set(ID, concState.conc[idx]);
     }
 } 

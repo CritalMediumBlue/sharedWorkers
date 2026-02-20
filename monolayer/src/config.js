@@ -10,19 +10,19 @@ export const CONFIG = {
         CAMERA_POSITION: { x: 0, y: 0, z: 70 },
         CAMERA_LOOKAT: { x: 0, y: 0, z: 0 },
         CONTROLS_MAX_DISTANCE: 100,
-        CONTROLS_MIN_DISTANCE: 20
+        CONTROLS_MIN_DISTANCE: 10
     },
     BACTERIUM: {
-        CAP_SEGMENTS: 1,
-        RADIAL_SEGMENTS: 3,
+        CAP_SEGMENTS: 3,
+        RADIAL_SEGMENTS: 5,
         INITIAL_POOL_SIZE: 2000,
         POOL_GROWTH_FACTOR: 1.1,
         WIREFRAME_SCALE: 1.03,
         COLOR_BY_INHERITANCE: true,
     },
     GRID: {
-        WIDTH: 100,
-        HEIGHT: 60,
-        dx: 1
+        WIDTH: 200,
+        HEIGHT: 120,
+        dx: 0.5
     },
 };
