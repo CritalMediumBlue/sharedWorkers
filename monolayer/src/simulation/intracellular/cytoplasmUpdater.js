@@ -18,50 +18,13 @@ import {
 
 
 
-export const updateAllCytoplasms = (positionMap, timeLapse, concentrationsState, dx) => {
-
-    for (const [id, idx] of positionMap.entries()) {
-        
-
-     
-        inheritConcentrations(id, idx, concentrationsState);
-        simulateConcentrations(  speciesNames,
-                    interiorManager,
-                    variables,
-                    parameters, 
-                    intEquations,
-                    id, timeLapse
-                );
-        
-
-        secretedSpeciesUpdate(variables, parameters, secretedSpecies, exteriorManager, extEquations, id, idx, concentrationsState, dx);
-    }
-
-};
-
-
-
-export const prepareForReactions = (positionMap, concentrationsState,dx) => {
-    for (const [id, idx] of positionMap.entries()) {
-        inheritConcentrations(id, idx, concentrationsState);
-        secretedSpeciesUpdate(variables, parameters, secretedSpecies, exteriorManager, extEquations, id, idx, concentrationsState, dx);
-    }
-}
-  
-
-// 
 function inheritConcentrations(ID, idx, concentrationsState) {
-   
-
     for (let i = 0, len = speciesNames.length; i < len; i++) {
         const speciesName = speciesNames[i];
         const managerInt = interiorManager[speciesName];
         if (!managerInt.has(ID)) {
-            const parent = lineage[ID]
-            
-          
+            const parent = lineage[ID];
             let defaultVal = managerInt.get(parent);
-          
             managerInt.set(ID, defaultVal);
         }
         variables.int[speciesName].val = managerInt.get(ID);
@@ -75,6 +38,30 @@ function inheritConcentrations(ID, idx, concentrationsState) {
         variables.ext[speciesName].val = extManager.get(ID);
     }
 }
+
+function runReactions(id, timeLapse) {
+    const dt = timeLapse / 3;
+    simulateConcentrations(speciesNames, interiorManager, variables, parameters, intEquations, id, dt);
+    simulateConcentrations(speciesNames, interiorManager, variables, parameters, intEquations, id, dt);
+    simulateConcentrations(speciesNames, interiorManager, variables, parameters, intEquations, id, dt);
+}
+
+/** First Strang half-step: react, then couple sources/sinks to the diffusion grid */
+export const reactionHalfStepWithCoupling = (positionMap, timeLapse, concentrationsState, dx) => {
+    for (const [id, idx] of positionMap.entries()) {
+        inheritConcentrations(id, idx, concentrationsState);
+        runReactions(id, timeLapse);
+        secretedSpeciesUpdate(variables, parameters, secretedSpecies, exteriorManager, extEquations, id, idx, concentrationsState, dx);
+    }
+};
+
+/** Second Strang half-step: read back from diffused grid, then react */
+export const reactionHalfStep = (positionMap, timeLapse, concentrationsState) => {
+    for (const [id, idx] of positionMap.entries()) {
+        inheritConcentrations(id, idx, concentrationsState);
+        runReactions(id, timeLapse);
+    }
+};
 
 export const calculateResultArray = (currentBacteria) => {
     

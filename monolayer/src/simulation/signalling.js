@@ -1,7 +1,7 @@
 import { getAdjustedCoordinates } from "./grid.js";
 import { ADI , setADIProperties, updateSinksAndSources} from "handy-diffusion";
 import { setModel, setParameter, extSpeciesNames, concentrationsState, parameters } from "./intracellular/cytoplasmState.js";
-import { updateAllCytoplasms, calculateResultArray, prepareForReactions } from "./intracellular/cytoplasmUpdater.js";
+import { reactionHalfStepWithCoupling, reactionHalfStep, calculateResultArray } from "./intracellular/cytoplasmUpdater.js";
 export { setModel, setParameter };
 
 
@@ -35,21 +35,22 @@ export const updateSignallingCircuit = (currentBacteria, HEIGHT, WIDTH, dx, dura
     setADIProperties(WIDTH, HEIGHT, parameters.DiffusionRate, dx, deltaT);
 
     const totalNumberOfADIIterations = Math.round(timeLapse / deltaT);
-        //prepareForReactions(positionMap, concentrationsState,dx);
 
 
     for (let i = 0; i < numberOfIterations; i++) {
         clearConcentrationSources();
 
-        updateAllCytoplasms(positionMap, timeLapse, concentrationsState, dx);
+        // First Strang half-step: reactions + couple sources/sinks to grid
+        reactionHalfStepWithCoupling(positionMap, timeLapse / 2, concentrationsState, dx);
 
+        // Diffusion (grid-only, no per-bacterium state)
         extSpeciesNames.forEach((speciesName) => {
-            updateSinksAndSources(concentrationsState[speciesName].sinks, concentrationsState[speciesName].sources)
+            updateSinksAndSources(concentrationsState[speciesName].sinks, concentrationsState[speciesName].sources);
             ADI(concentrationsState[speciesName].conc, totalNumberOfADIIterations, false);
         });
 
-        //updateAllCytoplasms(positionMap, timeLapse/2, concentrationsState, dx);
-
+        // Second Strang half-step: read back from diffused grid + react
+        reactionHalfStep(positionMap, timeLapse / 2, concentrationsState);
     }
 
     const resultArray = calculateResultArray(currentBacteria);
