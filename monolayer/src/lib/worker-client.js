@@ -1,24 +1,28 @@
 /**
  * worker-client.js — Shared helper for connecting to the simulation SharedWorker.
- *
+ * 
  * @param {string[]} topics  Topics this port wants to receive.
- * @param {Function} onMessage  Callback invoked with each incoming message object.
- * @returns {{ send: Function }}
+ * @param {(message: any) => void} onMessage  Handles incoming message payloads from the worker.
+ * @returns {{ send: (msg: any) => void }}
  */
-export function connectToWorker(topics, onMessage) {
+export function connectToWorker(topics, onMessage, name) {
+    // Create a SharedWorker instance pointing to the worker script.
     const worker = new SharedWorker(
         new URL('../simulation-worker.js', import.meta.url),
-        { type: 'module', name: 'simulation-worker' },
+        { type: 'module', name: name },
     );
 
+    // The SharedWorker exposes a 'port' property for communication.
     const port = worker.port;
 
+    // Forward incoming worker message payloads to the provided callback.
     port.onmessage = (event) => onMessage(event.data);
+    // Activate the port so queued and future messages are dispatched.
     port.start();
 
-    port.postMessage({ type: 'subscribe', data: { topics } });
-    
+    // Send messages to the worker.
     const send = (msg) => port.postMessage(msg);
+    send({ type: 'subscribe', data: { topics } }); 
 
-    return { send };
+    return { send }; 
 }

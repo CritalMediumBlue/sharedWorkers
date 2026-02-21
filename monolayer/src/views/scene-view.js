@@ -12,7 +12,7 @@ import { setupCapsulePool, updateCapsules, setBacterialColor } from '../renderin
 import { setupMesh, updateSurfaceMesh } from '../rendering/mesh.js';
 import { CONFIG } from '../config.js';
 
-export function mountSceneView() {
+export function mountSceneView(workerName) {
     let stage = {};
     let capsules = [];
     let mesh = null;
@@ -32,6 +32,7 @@ export function mountSceneView() {
     connectToWorker(
         ['state:init', 'state:bacteria', 'state:concentrations', 'state:coloringRule', 'state:viz'],
         onMessage,
+        workerName
     );
 
     function onMessage(msg) {

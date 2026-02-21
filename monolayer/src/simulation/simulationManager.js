@@ -6,7 +6,7 @@ let HEIGHT;
 let dx;
 let nameOfSpecies = [];
 let meanConcentrations ;
-let stdDeviations;
+let stdDeviations;         
     
 export function createBacteriumSystem(config, vars, params, bacteriaData,lineageMap) {
     

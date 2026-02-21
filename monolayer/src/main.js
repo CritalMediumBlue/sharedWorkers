@@ -9,14 +9,15 @@
 
 const params = new URLSearchParams(window.location.search);
 const view = params.get('view'); 
+const workerName = params.get('worker') || '1';
 
 
 if (view === '3d') {
-    import('./views/scene-view.js').then(m => m.mountSceneView());
+    import('./views/scene-view.js').then(m => m.mountSceneView(workerName));
 } else if (view === 'plot') {
-    import('./views/plot-view.js').then(m => m.mountPlotView());
+    import('./views/plot-view.js').then(m => m.mountPlotView(workerName));
 } else if (view === 'overlay') {
-    import('./views/overlay-view.js').then(m => m.mountOverlayView());
+    import('./views/overlay-view.js').then(m => m.mountOverlayView(workerName));
 } else {
     import('./views/controller-view.js').then(m => m.mountControllerView());
 }

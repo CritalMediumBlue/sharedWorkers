@@ -231,6 +231,7 @@ self.onconnect = (e) => {
                         params: { ...previusParams },
                         intSpeciesNames: Object.keys(previusVars.int),
                         extSpeciesNames: Object.keys(previusVars.ext),
+                        fileTitle: data.filename || 'Unknown Equations',
                     },
                 });
                 break;
@@ -238,14 +239,15 @@ self.onconnect = (e) => {
 
             case 'command:loadData': {
                 try {
-                    storedProcessedData = processFileData(data.text);
+                    storedProcessedData = processFileData(data.text, data.filename);
                 } catch (err) {
                     port.postMessage({ type: 'error', data: { message: `Data parse failed: ${err.message}` } });
                     break;
                 }
                 port.postMessage({
                     type: 'data:loaded',
-                    data: { timeSteps: storedProcessedData.bacteriaTimeSeries.length },
+                    data: { timeSteps: storedProcessedData.bacteriaTimeSeries.length,
+                        fileTitle: storedProcessedData.fileTitle },
                 });
                 break;
             }

@@ -9,7 +9,7 @@ import { connectToWorker } from '../lib/worker-client.js';
 import { Chart } from '../rendering/vendor.js';
 import { setupPlot, updatePlot } from '../rendering/plot.js';
 
-export function mountPlotView() {
+export function mountPlotView(workerName) {
     // ── DOM setup — create the element that plot.js looks for ──
     const plotDiv = document.createElement('div');
     plotDiv.id = 'plot-overlay';
@@ -22,6 +22,7 @@ export function mountPlotView() {
     connectToWorker(
         ['state:init', 'state:histories', 'state:coloringRule'],
         onMessage,
+        workerName
     );
 
     function onMessage(msg) {

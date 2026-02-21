@@ -7,27 +7,15 @@
 
 import { connectToWorker } from '../lib/worker-client.js';
 
-export function mountOverlayView() {
+export function mountOverlayView(workerName) {
     // ── DOM setup ──
     const overlay = document.createElement('div');
     overlay.id = 'dynamic-text-overlay';
-    // Full-window styling (override the small fixed overlay from styles.css)
-    overlay.style.position   = 'fixed';
-    overlay.style.top        = '0';
-    overlay.style.left       = '0';
-    overlay.style.width      = '100vw';
-    overlay.style.height     = '100vh';
-    overlay.style.padding    = '24px';
-    overlay.style.fontSize   = '22px';
-    overlay.style.color      = 'white';
-    overlay.style.fontFamily = 'monospace';
-    overlay.style.background = 'black';
-    overlay.style.boxSizing  = 'border-box';
     overlay.innerText = 'Waiting for simulation…';
     document.body.appendChild(overlay);
 
     // ── Worker connection ──
-    connectToWorker(['state:overlay'], onMessage);
+    connectToWorker(['state:overlay'], onMessage, workerName);
 
     function onMessage(msg) {
         if (msg.type !== 'state:overlay') return;

@@ -1,10 +1,11 @@
 
-export function processFileData(fileContent) {
+export function processFileData(fileContent, fallbackTitle = 'Unknown Title') {
     let bacteriaTimeSeries = [];
     let bacteriaLineage;
 
    
     const data = JSON.parse(fileContent);
+    const fileTitle = fallbackTitle || "Unknown Title";
 
     // Process  data object
     Object.entries(data).forEach(([timeStep, bacteria]) => {
@@ -34,7 +35,7 @@ export function processFileData(fileContent) {
     const averageLifetime = analyzeBacteriaLineage(bacteriaTimeSeries, bacteriaLineage);
 
 
-    return {bacteriaTimeSeries,averageLifetime,bacteriaLineage};
+    return {bacteriaTimeSeries,averageLifetime,bacteriaLineage,fileTitle};
 }
 
 
