@@ -1,4 +1,4 @@
-export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation}) {
+export function wireControllerHandlers({ sendMessage, ui, state, newSimulation}) {
     const {
         loadEqBtn,
         loadDataBtn,
@@ -26,13 +26,17 @@ export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation})
     cloneBtn.on('click', () => {
         const newWorkerName = prompt('Enter name for the new simulation:', `${state.workerName}`);
         if (newWorkerName) {
-            newSimulation(newWorkerName);
+            newSimulation(newWorkerName, state);
+        } else {
+            alert('Simulation name cannot be empty.');
         }
     });
 
     loadEqBtn.on('click', () => {
         pickFile('.js', (text, filename) => { // pick and then send to worker
             sendMessage({ type: 'command:loadEquations', data: { text, filename } });
+            state.equationsText = text;
+            state.equationsFileTitle = filename;
             updateStatus();
         });
     });
@@ -40,6 +44,8 @@ export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation})
     loadDataBtn.on('click', () => {
         pickFile('.json', (text, filename) => { // pick and then send to worker
             sendMessage({ type: 'command:loadData', data: { text, filename } });
+            state.dataText = text;
+            state.dataFileTitle = filename;
             updateStatus();
         });
     });
@@ -68,7 +74,7 @@ export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation})
         switch (msg.type) {
             case 'equations:loaded':
                 state.equationsLoaded = true;
-                state.equationsFileTitle = msg.data.fileTitle || '';
+                state.equations = msg.data;
                 buildParamSliders(msg.data.params);
                 buildVisualizationTab(msg.data.intSpeciesNames, msg.data.extSpeciesNames);
                 updateStatus();
@@ -77,6 +83,7 @@ export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation})
 
             case 'data:loaded':
                 state.dataLoaded = true;
+                state.data = msg.data;
                 state.dataFileTitle = msg.data.fileTitle || '';
                 updateStatus();
                 checkReady();
@@ -85,6 +92,8 @@ export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation})
             case 'error':
                 console.error('[Worker error]', msg.data.message);
                 break;
+            case 'state:cloned':
+                break;
         }
     }
 
@@ -92,13 +101,16 @@ export function wireControllerHandlers({ sendMessage, ui, state ,newSimulation})
         if (state.dataLoaded && state.equationsLoaded) {
             execFolder.disabled = false;
         }
+        console.log('check was called')
     }
 
     function updateStatus() {
         const eq = state.equationsLoaded ? '✅ Loaded' : 'No file loaded';
         const dt = state.dataLoaded ? '✅ Loaded' : 'No file loaded';
-        statusTextState.controller.value.setRawValue(`${dt} ${state.dataFileTitle}`);
-        statusTextEq.controller.value.setRawValue(`${eq} ${state.equationsFileTitle}`);
+        const eqTitle = state.equationsLoaded ? state.equations.fileTitle : '';
+        const dtTitle = state.dataLoaded ? state.dataFileTitle : '';
+        statusTextState.controller.value.setRawValue(`${dt} ${dtTitle}`);
+        statusTextEq.controller.value.setRawValue(`${eq} ${eqTitle}`);
     }
 
     function buildParamSliders(params) {

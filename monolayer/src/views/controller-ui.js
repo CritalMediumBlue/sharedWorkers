@@ -36,12 +36,7 @@ export function createControllerUI(paneDiv, workerName) {
 
     const execFolder = executionPage.addFolder({ title: 'Manage Simulation' });
     execFolder.disabled = true;
-    const nameInput = execFolder.addBlade({
-        view: 'text',
-        readonly: false,
-        parse: (v) => String(v),
-        value: 'My Simulation',
-    });
+   
     const initBtn = execFolder.addButton({ title: '🚀', label: 'Initialize' });
     const playBtn = execFolder.addButton({ title: '▶/⏸', label: 'Run / Pause' });
     const resetBtn = execFolder.addButton({ title: '↺', label: 'Reset' });

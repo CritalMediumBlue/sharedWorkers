@@ -21,14 +21,18 @@ export function mountControllerView() {
     document.body.appendChild(paneDiv);
 
 
-    const initializeNewSimulation = (workerName) => {
+    const initializeNewSimulation = (workerName, cloneData = null) => {
         const ui = createControllerUI(paneDiv, workerName);
+        
         const state = {
-            workerName: workerName,
+            workerName,
             dataLoaded: false,
             equationsLoaded: false,
-            equationsFileTitle: '',
+            equations: null,
+            data: null,
             dataFileTitle: '',
+            equationsText: '',
+            dataText: '',
         };
 
         let send = () => {};
@@ -36,7 +40,7 @@ export function mountControllerView() {
             sendMessage: (msg) => send(msg),
             ui,
             state,
-            newSimulation: initializeNewSimulation, 
+            newSimulation: initializeNewSimulation,
         });
 
         ({ send } = connectToWorker(
@@ -44,8 +48,29 @@ export function mountControllerView() {
             onMessage,
             workerName
         ));
-    }
 
-        initializeNewSimulation('1');
+        // If cloning, send data after connection is established
+        if (cloneData) {
+            // Use setTimeout to ensure message handler is fully wired up
+            setTimeout(() => {
+                send({ 
+                    type: 'command:loadEquations', 
+                    data: { 
+                        text: cloneData.equationsText, 
+                        filename: cloneData.equations?.fileTitle || 'equations.json'
+                    } 
+                });
+                send({ 
+                    type: 'command:loadData', 
+                    data: { 
+                        text: cloneData.dataText, 
+                        filename: cloneData.dataFileTitle || 'data.json'
+                    } 
+                });
+            }, 0);
+        }
+    }
+        const firstWorkerName = prompt('Enter name for the simulation:', '1');
+        initializeNewSimulation(firstWorkerName, null);
 
 }

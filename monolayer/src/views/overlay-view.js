@@ -11,7 +11,7 @@ export function mountOverlayView(workerName) {
     // ── DOM setup ──
     const overlay = document.createElement('div');
     overlay.id = 'dynamic-text-overlay';
-    overlay.innerText = 'Waiting for simulation…';
+    overlay.innerText = 'Waiting for simulation to start…';
     document.body.appendChild(overlay);
 
     // ── Worker connection ──
