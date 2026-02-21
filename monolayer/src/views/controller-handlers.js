@@ -13,8 +13,6 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         closeAllBtn,
         statusTextState,
         statusTextEq,
-        statusEqObj,
-        statusStateObj,
         execFolder,
         paramsFolder,
         vizPage,

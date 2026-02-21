@@ -34,28 +34,35 @@ body, html {
 
 #pane * {
 	    font-size: 19px; 
+      
+}
+
+#pane {
+        margin-top: 10px;
+        margin-bottom:15px;
+
 }
 
 :root {
   --tp-base-background-color: hsla(236, 100%, 10%, 0.8);
-  --tp-base-shadow-color: hsla(180, 100%, 50%, 1.00);
+  --tp-base-shadow-color: rgb(0, 208, 255);
   --tp-button-background-color: hsla(180, 100%, 10%, 1.00); 
-  --tp-button-background-color-active: rgba(0, 128, 128, 1.00);
-  --tp-button-background-color-focus: rgba(0, 102, 102, 1.00);
+  --tp-button-background-color-active: rgb(0, 64, 128);
+  --tp-button-background-color-focus: rgb(0, 20, 67);
   --tp-button-background-color-hover: rgba(-0, 77, 77, 1.00);
   --tp-button-foreground-color: hsla(180, 100%, 50%, 1.00);
   --tp-container-background-color: rgb(24, 70, 70);
   --tp-container-background-color-active: hsla(180, 50%, 46%, 1.00);
-  --tp-container-background-color-focus: hsla(180, 50%, 41%, 1.00);
-  --tp-container-background-color-hover: hsla(180, 50%, 36%, 1.00);
-  --tp-container-foreground-color: rgb(150, 255, 255);
+  --tp-container-background-color-focus: rgb(22, 30, 30);
+  --tp-container-background-color-hover: rgb(17, 109, 83);
+  --tp-container-foreground-color: rgb(255, 255, 255);
   --tp-groove-foreground-color: rgb(0, 255, 255);
   --tp-input-background-color: hsla(180, 100%, 10%, 1.00);
   --tp-input-background-color-active: rgba(0, 128, 128, 1.00);
   --tp-input-background-color-focus: rgba(0, 102, 102, 1.00);
   --tp-input-background-color-hover: rgba(-0, 77, 77, 1.00);
-  --tp-input-foreground-color: hsla(180, 100%, 50%, 1.00);
-  --tp-label-foreground-color: rgb(100, 255, 255);
+  --tp-input-foreground-color: rgb(255, 255, 255);
+  --tp-label-foreground-color: rgb(255, 255, 255);
   --tp-monitor-background-color: hsla(180, 100%, 10%, 1.00);
-  --tp-monitor-foreground-color: hsla(180, 100%, 50%, 1.00);
+  --tp-monitor-foreground-color: rgb(255, 255, 255);
 }

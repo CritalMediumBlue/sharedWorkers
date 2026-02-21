@@ -16,12 +16,14 @@ import { wireControllerHandlers } from './controller-handlers.js';
 
 export function mountControllerView() {
 
-    const paneDiv = document.createElement('div');
-    paneDiv.id = 'pane';
-    document.body.appendChild(paneDiv);
+    
 
 
     const initializeNewSimulation = (workerName, cloneData = null) => {
+        const paneDiv = document.createElement('div');
+        paneDiv.id = 'pane';
+        document.body.appendChild(paneDiv);
+
         const ui = createControllerUI(paneDiv, workerName);
         
         const state = {
@@ -51,6 +53,10 @@ export function mountControllerView() {
 
         // If cloning, send data after connection is established
         if (cloneData) {
+            // Store the text immediately so this clone can also be cloned
+            state.equationsText = cloneData.equationsText;
+            state.dataText = cloneData.dataText;
+            
             // Use setTimeout to ensure message handler is fully wired up
             setTimeout(() => {
                 send({ 
@@ -70,6 +76,8 @@ export function mountControllerView() {
             }, 0);
         }
     }
+
+    
         const firstWorkerName = prompt('Enter name for the simulation:', '1');
         initializeNewSimulation(firstWorkerName, null);
 
