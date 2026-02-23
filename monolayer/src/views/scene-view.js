@@ -59,7 +59,7 @@ export function mountSceneView(workerName) {
         }
     }
 
-    // ── Scene setup (runs once on state:init) ──
+    // ── Scene setup (runs once on state:init) ── 
     function setupScene(initData) {
         const SCENE     = CONFIG.SCENE;
         const BACTERIUM = CONFIG.BACTERIUM;
@@ -95,6 +95,8 @@ export function mountSceneView(workerName) {
         Object.entries(rule).forEach(([species, color]) => {
             setBacterialColor(species, color);
         });
+        updateCapsules(latestBacteria, THREE, capsules, capsuleVisibility);
+
     }
 
     function handleVizCommand(data) {
@@ -104,6 +106,8 @@ export function mountSceneView(workerName) {
         switch (action) {
             case 'setMeshVisible':
                 if (mesh) mesh.visible = value;
+                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
+
                 break;
             case 'selectSpecies':
                 // Species selection is handled by the worker for concentration publishing
@@ -111,7 +115,7 @@ export function mountSceneView(workerName) {
             case 'setCapsuleVisibility':
                 capsuleVisibility = value;
                 if (latestBacteria) {
-                    updateCapsules(latestBacteria, CONFIG.BACTERIUM, THREE, capsules, capsuleVisibility);
+                    updateCapsules(latestBacteria, THREE, capsules, capsuleVisibility);
                 }
                 break;
             case 'visibleGridAndAxes':
@@ -120,12 +124,16 @@ export function mountSceneView(workerName) {
                 break;
             case 'setMeshScale':
                 meshScale = value;
+                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
+
                 break;
             case 'translateMesh':
                 meshTranslationZ = value;
+                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
                 break;
             case 'setColorMultiplier':
                 colorMultiplier = value;
+                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
                 break;
         }
     }
@@ -136,13 +144,13 @@ export function mountSceneView(workerName) {
         if (!ready) return;
 
         if (latestBacteria) {
-            updateCapsules(latestBacteria, CONFIG.BACTERIUM, THREE, capsules, capsuleVisibility);
-            latestBacteria = null; // consume
+            updateCapsules(latestBacteria, THREE, capsules, capsuleVisibility);
+            //latestBacteria = null; // consume
         }
 
         if (latestConcentration && mesh && mesh.visible) {
             updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
-            latestConcentration = null; // consume
+            //latestConcentration = null; // consume
         }
 
         stage.renderer.render(stage.scene, stage.camera);

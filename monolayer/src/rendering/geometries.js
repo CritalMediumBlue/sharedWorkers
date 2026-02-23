@@ -51,8 +51,7 @@ export function populateMapCaches(BACTERIUM, THREE, capsuleGeometryCache, edgesG
 /**
  * Updates the color of a capsule based on cytoplasm concentrations
  */
-export function updateCapsuleColor(capsule, BACTERIUM, THREE, cytoplasmConcentrations) {
-    if (BACTERIUM.COLOR_BY_INHERITANCE) {
+export function updateCapsuleColor(capsule, THREE, cytoplasmConcentrations) {
         const color = getColor(cytoplasmConcentrations);
         const threeColor = new THREE.Color(color[0]);
 
@@ -60,5 +59,5 @@ export function updateCapsuleColor(capsule, BACTERIUM, THREE, cytoplasmConcentra
         capsule.material.opacity = color[1];
         capsule.children[0].material.color.copy(threeColor.clone().multiplyScalar(0.1));
         capsule.renderOrder = 0;
-    }
+    
 }

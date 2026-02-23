@@ -15,7 +15,6 @@ const edgesGeometryCache = new Map();
  * Creates and initializes a pool of bacteria capsule meshes in the 3D scene
  * 
  * @param {Object} stage - The stage object containing the scene where capsules will be added
- * @param {Object} BACTERIUM - Configuration object containing bacterial simulation parameters
  * @param {Object} THREE - The Three.js library object needed for creating 3D objects
  * @param {Array<THREE.Mesh>} capsules - Existing array of capsule objects to be populated
  * @returns {Array<THREE.Mesh>} The array of capsule meshes that was populated
@@ -55,11 +54,10 @@ export function setupCapsulePool(stage, BACTERIUM, THREE, capsules) {
  * Updates the properties of capsule objects based on bacteria simulation data
  * 
  * @param {Array<Object>} bacteriaData - Array of bacteria data objects from simulation
- * @param {Object} BACTERIUM - Configuration object containing bacterial parameters
  * @param {Object} THREE - The Three.js library object
  * @param {Array<THREE.Mesh>} capsules - Array of capsule mesh objects to update
  */
-export function updateCapsules(bacteriaData, BACTERIUM, THREE, capsules, capsuleVisibility) {
+export function updateCapsules(bacteriaData, THREE, capsules, capsuleVisibility) {
 
     // Reset active count and hide all capsules
     let activeCount = 0;
@@ -86,10 +84,73 @@ export function updateCapsules(bacteriaData, BACTERIUM, THREE, capsules, capsule
         capsule.position.set(threePosition.x, threePosition.y, 0);
         capsule.rotation.z = angle * Math.PI;  
         updateCapsuleGeometry(capsule, longAxis);
-        updateCapsuleColor(capsule, BACTERIUM, THREE, cytoplasmConcentrations);
+        updateCapsuleColor(capsule, THREE, cytoplasmConcentrations);
        
         capsule.visible = true;
     });
+} 
+
+let PCAmins = [0, 0, 0];
+let PCAmaxs = [0, 0, 0];
+export function resetPCAs() {
+    PCAmins = [0, 0, 0];
+    PCAmaxs = [0, 0, 0];
+}
+
+export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibility, capsuleScale ) {
+
+    // Reset active count and hide all capsules
+    let activeCount = 0;
+    capsules.forEach(capsule => {
+        capsule.visible = false;
+    });
+
+    if (!bacteriaData || bacteriaData.length === 0 || capsuleVisibility === false) {
+        return;
+    }
+
+    // Collect all PCA values per axis across all bacteria
+    const allPCA = bacteriaData.map(b => {
+        const vals = Object.values(b.cytoplasmConcentrations);
+        return [vals[0] , vals[1] , vals[2] ]; // collect the first three species
+    });
+
+    //allPCA is an array of arrays: [[b1_x, b1_y, b1_z], [b2_x, b2_y, b2_z], ...]
+    // We need to find the min and max for each axis to normalize later
+
+    const newPCAmins = [0, 1, 2].map(i => Math.min(...allPCA.map(p => p[i]))); // i is the index for x, y, z. p is the index for each bacterium
+    const newPCAmaxs = [0, 1, 2].map(i => Math.max(...allPCA.map(p => p[i])));
+
+    for (let i = 0; i < 3; i++) {
+        PCAmins[i] = Math.min(PCAmins[i], newPCAmins[i]);
+        PCAmaxs[i] = Math.max(PCAmaxs[i], newPCAmaxs[i]);
+    }
+
+    // Update and show capsules for each bacterium
+    bacteriaData.forEach((bacterium, idx) => {
+        const capsule = capsules[activeCount++];
+   
+        const { angle, longAxis, cytoplasmConcentrations } = bacterium;
+
+        const raw = allPCA[idx];
+
+        // Normalize each axis to [0, 1]; if range is zero, place at 0.5
+        const xPCA = PCAmaxs[0] !== PCAmins[0] ? (raw[0] - PCAmins[0]) / (PCAmaxs[0] - PCAmins[0]) : 0.5;
+        const yPCA = PCAmaxs[1] !== PCAmins[1] ? (raw[1] - PCAmins[1]) / (PCAmaxs[1] - PCAmins[1]) : 0.5;
+        const zPCA = PCAmaxs[2] !== PCAmins[2] ? (raw[2] - PCAmins[2]) / (PCAmaxs[2] - PCAmins[2]) : 0.5;
+   
+        capsule.position.set(xPCA, yPCA, zPCA);
+        capsule.scale.set(capsuleScale, capsuleScale, capsuleScale);
+        capsule.rotation.z = 0;  
+        updateCapsuleGeometry(capsule, longAxis);
+        updateCapsuleColor(capsule, THREE, cytoplasmConcentrations);
+       
+        capsule.visible = true;
+    });
+
+  
+
+  
 } 
 
 

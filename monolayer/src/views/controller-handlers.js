@@ -9,6 +9,7 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         open3dBtn,
         openPlotBtn,
         openOverlayBtn,
+        openPhasePortraitBtn,
         openAllBtn,
         closeAllBtn,
         statusTextState,
@@ -56,10 +57,12 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     open3dBtn.on('click', () => openDashboard(`${base}?view=3d&worker=${state.workerName}`, 'scene', 'width=800,height=600'));
     openPlotBtn.on('click', () => openDashboard(`${base}?view=plot&worker=${state.workerName}`, 'plot', 'width=600,height=400'));
     openOverlayBtn.on('click', () => openDashboard(`${base}?view=overlay&worker=${state.workerName}`, 'overlay', 'width=400,height=250'));
+    openPhasePortraitBtn.on('click', () => openDashboard(`${base}?view=phase-portrait&worker=${state.workerName}`, 'phase-portrait', 'width=800,height=600'));
     openAllBtn.on('click', () => {
         openDashboard(`${base}?view=3d&worker=${state.workerName}`, 'scene', 'width=800,height=600');
         openDashboard(`${base}?view=plot&worker=${state.workerName}`, 'plot', 'width=600,height=400');
         openDashboard(`${base}?view=overlay&worker=${state.workerName}`, 'overlay', 'width=400,height=250');
+        openDashboard(`${base}?view=phase-portrait&worker=${state.workerName}`, 'phase-portrait', 'width=800,height=600');
     });
     closeAllBtn.on('click', closeAllDashboards);
 
@@ -193,7 +196,12 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         });
 
         const someColors = [
-            { r: 0, g: 0, b: 255, a: 1, intesity: 0 }, { r: 0, g: 255, b: 0, a: 1, intesity: 0 }, { r: 255, g: 0, b: 255, a: 1, intesity: 0 }, { r: 0, g: 255, b: 255, a: 1, intesity: 0 }, { r: 255, g: 0, b: 0, a: 1, intesity: 0 }, { r: 255, g: 255, b: 0, a: 1, intesity: 0 }
+            { r: 0, g: 0, b: 255, a: 1, intesity: 0 }, 
+            { r: 0, g: 255, b: 0, a: 1, intesity: 0 }, 
+            { r: 255, g: 0, b: 0, a: 1, intesity: 0 }, 
+            { r: 255, g: 0, b: 255, a: 1, intesity: 0 }, 
+            { r: 0, g: 255, b: 255, a: 1, intesity: 0 }, 
+            { r: 255, g: 255, b: 0, a: 1, intesity: 0 }
         ];
 
         const PARAMS = {};

@@ -18,6 +18,8 @@ if (view === '3d') {
     import('./views/plot-view.js').then(m => m.mountPlotView(workerName));
 } else if (view === 'overlay') {
     import('./views/overlay-view.js').then(m => m.mountOverlayView(workerName));
+} else if (view === 'phase-portrait') {
+    import('./views/phase-portrait.js').then(m => m.mountPhasePortraitView(workerName));
 } else {
     import('./views/controller-view.js').then(m => m.mountControllerView());
 }

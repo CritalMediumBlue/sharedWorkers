@@ -18,11 +18,23 @@ export const CONFIG = {
         INITIAL_POOL_SIZE: 2000,
         POOL_GROWTH_FACTOR: 1.1,
         WIREFRAME_SCALE: 1.03,
-        COLOR_BY_INHERITANCE: true,
     },
     GRID: {
         WIDTH: 200,
         HEIGHT: 120,
         dx: 0.5
+    },
+    PHASE_PORTRAIT: {
+        FOG_COLOR: 0x0f0000,
+        FOG_NEAR: 1,
+        FOG_FAR: 20,
+        CAMERA_FOV: 75,
+        CAMERA_NEAR: 0.01,
+        CAMERA_FAR: 100,
+        CAMERA_POSITION: { x: 0.5, y: 0.5, z: 3 },
+        CAMERA_LOOKAT: { x: 0.5, y: 0.5, z: 0.5 },
+        CONTROLS_MAX_DISTANCE: 10,
+        CONTROLS_MIN_DISTANCE: 0.1,
+        CAPSULE_SCALE: 0.005
     },
 };

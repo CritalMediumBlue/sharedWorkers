@@ -45,12 +45,7 @@ const TICK_MS = 16; // ≈60 Hz, similar to requestAnimationFrame
 
 // Default colours for species (visible defaults so bacteria aren't invisible)
 const defaultColors = [
-    { r: 255, g: 50,  b: 50,  a: 1, intesity: 1 },
-    { r: 50,  g: 255, b: 50,  a: 1, intesity: 1 },
-    { r: 50,  g: 50,  b: 255, a: 1, intesity: 1 },
-    { r: 255, g: 0,   b: 255, a: 1, intesity: 1 },
-    { r: 0,   g: 255, b: 255, a: 1, intesity: 1 },
-    { r: 255, g: 255, b: 0,   a: 1, intesity: 1 },
+    { r: 0, g: 0,  b: 0,  a: 1, intesity: 1 }
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -143,7 +138,7 @@ function tick() {
     singleStep();
 
     // Publish at different cadences (matching original render logic)
-    if (stepCount % 5 === 0) {
+    if (stepCount % 1 === 0) {
         publish('state:bacteria', bacteriaDataUpdated);
 
         if (selectedSpecies && concentrations?.[selectedSpecies]) {
@@ -160,7 +155,7 @@ function tick() {
         });
     }
 
-    if (stepCount % 30 === 0) {
+    if (stepCount % 1 === 0) {
         publish('state:histories', histories);
     }
 
@@ -292,6 +287,7 @@ self.onconnect = (e) => {
 
             case 'command:setParam':
                 setParamFromGUI(data.paramName, data.value);
+                previusParams[data.paramName] = data.value;
                 break;
 
             case 'command:selectSpecies':

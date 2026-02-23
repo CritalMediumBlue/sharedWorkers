@@ -57,6 +57,7 @@ export function createControllerUI(paneDiv, workerName) {
     const open3dBtn = dashPage.addButton({ title: '🖥️  3D Scene' });
     const openPlotBtn = dashPage.addButton({ title: '📊  Plot' });
     const openOverlayBtn = dashPage.addButton({ title: '  Monitor' });
+    const openPhasePortraitBtn = dashPage.addButton({ title: '📈  Phase Portrait' });
     dashPage.addBlade({ view: 'separator' });
     const openAllBtn = dashPage.addButton({ title: '🚀  Open All' });
     const closeAllBtn = dashPage.addButton({ title: '🛑  Close All' });
@@ -81,6 +82,7 @@ export function createControllerUI(paneDiv, workerName) {
         open3dBtn,
         openPlotBtn,
         openOverlayBtn,
+        openPhasePortraitBtn,
         openAllBtn,
         closeAllBtn,
         cloneBtn,

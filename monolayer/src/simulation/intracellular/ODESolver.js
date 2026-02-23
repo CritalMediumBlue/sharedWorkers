@@ -16,6 +16,9 @@ export function simulateConcentrations(speciesNames,
             newConc = 1e-14;
         }
         manager.set(ID, newConc);
+        // Keep variables in sync so subsequent species in the same step
+        // (and subsequent sub-steps) see the updated concentration.
+        variables.int[speciesName].val = newConc;
     }
 }
 
