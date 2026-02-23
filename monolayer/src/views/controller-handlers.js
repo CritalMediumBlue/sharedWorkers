@@ -60,7 +60,7 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     openPhasePortraitBtn.on('click', () => openDashboard(`${base}?view=phase-portrait&worker=${state.workerName}`, 'phase-portrait', 'width=800,height=600'));
     openAllBtn.on('click', () => {
         openDashboard(`${base}?view=3d&worker=${state.workerName}`, 'scene', 'width=800,height=600');
-        openDashboard(`${base}?view=plot&worker=${state.workerName}`, 'plot', 'width=600,height=400');
+        openDashboard(`${base}?view=plot&worker=${state.workerName}`, 'plot', 'width=1200,height=300');
         openDashboard(`${base}?view=overlay&worker=${state.workerName}`, 'overlay', 'width=400,height=250');
         openDashboard(`${base}?view=phase-portrait&worker=${state.workerName}`, 'phase-portrait', 'width=800,height=600');
     });

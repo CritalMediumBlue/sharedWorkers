@@ -79,6 +79,7 @@ export const calculateResultArray = (currentBacteria) => {
 
         return {
             id,
+            parentId: lineage[id] ?? null,
             x,
             y,
             angle,

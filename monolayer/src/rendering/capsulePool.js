@@ -1,5 +1,6 @@
 import { populateMapCaches, updateCapsuleColor, setBacterialColor } from './geometries.js';
 export { setBacterialColor }
+
 /**
  * @module capsulePool
  * @description Manages the creation and initialization of a pool of 3D capsule objects 
@@ -97,6 +98,14 @@ export function resetPCAs() {
     PCAmaxs = [0, 0, 0];
 }
 
+// Stores the previous normalized phase-space position for each bacterium by ID.
+// Used to compute the displacement vector for capsule orientation.
+const previousPCAPositions = new Map(); // bacteriumId → { x, y, z }
+
+export function resetPCAPositions() {
+    previousPCAPositions.clear();
+}
+
 export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibility, capsuleScale ) {
 
     // Reset active count and hide all capsules
@@ -126,11 +135,14 @@ export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibili
         PCAmaxs[i] = Math.max(PCAmaxs[i], newPCAmaxs[i]);
     }
 
+    // Default orientation axis: CapsuleGeometry is aligned along Y by default
+    const yAxis = new THREE.Vector3(0, 1, 0);
+
     // Update and show capsules for each bacterium
     bacteriaData.forEach((bacterium, idx) => {
         const capsule = capsules[activeCount++];
    
-        const { angle, longAxis, cytoplasmConcentrations } = bacterium;
+        const { id, longAxis, cytoplasmConcentrations } = bacterium;
 
         const raw = allPCA[idx];
 
@@ -141,7 +153,39 @@ export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibili
    
         capsule.position.set(xPCA, yPCA, zPCA);
         capsule.scale.set(capsuleScale, capsuleScale, capsuleScale);
-        capsule.rotation.z = 0;  
+
+        // Compute orientation from displacement in phase space
+        const prev = previousPCAPositions.get(id);
+        if (prev) {
+            const dx = xPCA - prev.x;
+            const dy = yPCA - prev.y;
+            const dz = zPCA - prev.z;
+            const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (len > 1e-9) {
+                const dir = new THREE.Vector3(dx / len, dy / len, dz / len);
+                capsule.quaternion.setFromUnitVectors(yAxis, dir);
+            }
+            // If displacement is negligible, keep the previous quaternion (no jitter)
+        } else {
+            // New bacterium: use mother cell's previous position to estimate initial direction
+            const motherId = bacterium.parentId;
+            if (motherId !== null && motherId !== undefined) {
+                const motherPrev = previousPCAPositions.get(motherId);
+                if (motherPrev) {
+                    const dx = xPCA - motherPrev.x;
+                    const dy = yPCA - motherPrev.y;
+                    const dz = zPCA - motherPrev.z;
+                    const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    if (len > 1e-9) {
+                        const dir = new THREE.Vector3(dx / len, dy / len, dz / len);
+                        capsule.quaternion.setFromUnitVectors(yAxis, dir);
+                    }
+                }
+            }
+        }
+        // Store current normalized position for next frame
+        previousPCAPositions.set(id, { x: xPCA, y: yPCA, z: zPCA });
+
         updateCapsuleGeometry(capsule, longAxis);
         updateCapsuleColor(capsule, THREE, cytoplasmConcentrations);
        
