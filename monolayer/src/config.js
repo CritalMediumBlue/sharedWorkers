@@ -10,24 +10,24 @@ export const CONFIG = {
         CAMERA_POSITION: { x: 0, y: 0, z: 70 },
         CAMERA_LOOKAT: { x: 0, y: 0, z: 0 },
         CONTROLS_MAX_DISTANCE: 100,
-        CONTROLS_MIN_DISTANCE: 10
+        CONTROLS_MIN_DISTANCE: 10 
     },
     BACTERIUM: {
-        CAP_SEGMENTS: 3,
-        RADIAL_SEGMENTS: 5,
+        CAP_SEGMENTS: 1,
+        RADIAL_SEGMENTS: 3,
         INITIAL_POOL_SIZE: 2000,
         POOL_GROWTH_FACTOR: 1.1,
-        WIREFRAME_SCALE: 1.03,
+        WIREFRAME_SCALE: 1.02,
     },
     GRID: {
-        WIDTH: 200,
-        HEIGHT: 120,
-        dx: 0.5
+        WIDTH: 100,
+        HEIGHT: 60,
+        dx: 1
     },
     PHASE_PORTRAIT: {
         FOG_COLOR: 0x0f0000,
         FOG_NEAR: 1,
-        FOG_FAR: 20,
+        FOG_FAR: 10,
         CAMERA_FOV: 75,
         CAMERA_NEAR: 0.01,
         CAMERA_FAR: 100,
@@ -35,6 +35,6 @@ export const CONFIG = {
         CAMERA_LOOKAT: { x: 0.5, y: 0.5, z: 0.5 },
         CONTROLS_MAX_DISTANCE: 10,
         CONTROLS_MIN_DISTANCE: 0.1,
-        CAPSULE_SCALE: 0.005
+        CAPSULE_SCALE: 0.008
     },
 };

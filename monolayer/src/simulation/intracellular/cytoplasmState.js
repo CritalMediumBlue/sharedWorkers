@@ -95,7 +95,7 @@ const setCytopManager = (bacteriaData, lineageMap) => {
             } else {
                 exteriorManager[speciesName].set(ID, initialExtConFunct[speciesName]()); 
             }
-
+ 
 
 
         }); 
@@ -106,4 +106,51 @@ const setCytopManager = (bacteriaData, lineageMap) => {
 
 export const setParameter = (paramName, value) => {
     parameters[paramName] = value;
+};
+
+/**
+ * Resets all model state to allow re-initialization.
+ * Useful for testing and switching between different ODE systems.
+ */
+export const resetModel = () => {
+    // Clear all manager Maps
+    Object.keys(interiorManager).forEach(key => {
+        if (interiorManager[key] instanceof Map) {
+            interiorManager[key].clear();
+        }
+        delete interiorManager[key];
+    });
+    
+    Object.keys(exteriorManager).forEach(key => {
+        if (exteriorManager[key] instanceof Map) {
+            exteriorManager[key].clear();
+        }
+        delete exteriorManager[key];
+    });
+    
+    // Clear arrays
+    intSpeciesNames.length = 0;
+    extSpeciesNames.length = 0;
+    
+    // Clear concentration state
+    Object.keys(concentrationsState).forEach(key => {
+        delete concentrationsState[key];
+    });
+    
+    // Clear equations
+    Object.keys(intEquations).forEach(key => delete intEquations[key]);
+    Object.keys(extEquations).forEach(key => delete extEquations[key]);
+    
+    // Clear variables and parameters
+    Object.keys(variables).forEach(key => delete variables[key]);
+    Object.keys(parameters).forEach(key => delete parameters[key]);
+    
+    // Reset module-level state
+    speciesNames = null;
+    secretedSpecies = null;
+    lineage = null;
+    
+    // Clear initial concentration function caches
+    initialIntConFunct = {};
+    initialExtConFunct = {};
 };

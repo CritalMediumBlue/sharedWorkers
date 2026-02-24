@@ -1,4 +1,4 @@
- import { updateSignallingCircuit, setModel,setParameter } from './signalling.js';
+ import { updateSignallingCircuit, setModel,setParameter , resetModel} from './signalling.js';
 
 
 let WIDTH;
@@ -25,8 +25,12 @@ export function createBacteriumSystem(config, vars, params, bacteriaData,lineage
 export const setParamFromGUI = (paramName, newValue) => {setParameter(paramName, newValue);}
 
 
-export function updateSimulation(currentBacteria, minutes) {
-    const totalTimeLapse = minutes*60; // seconds — how many seconds are in one single time step from the excludedVolume simulations
+export function updateSimulation(currentBacteria, minutesPerStep, params) { //one step
+    // Convert minutes per step → seconds per step, then scale to ODE time units.
+    // TIME_SCALE_SECONDS = 1 for dimensional ODEs (seconds), or the characteristic
+    // time scale t_scale (in seconds) for non-dimensional ODEs.
+    const timeScaleSeconds = params.TIME_SCALE_SECONDS;
+    const totalTimeLapse = (minutesPerStep * 60) / timeScaleSeconds;
 
     const { bacteriaDataUpdated, concentrations } = updateSignallingCircuit(currentBacteria, HEIGHT, WIDTH, dx, totalTimeLapse);
 
@@ -41,33 +45,27 @@ export function updateSimulation(currentBacteria, minutes) {
 
 export function getGlobalSpeciesConcentrations(bacteriaData) {
 
-    // Calculate mean (average) concentrations
+    // Reset accumulators before each calculation
+    meanConcentrations.fill(0);
+    stdDeviations.fill(0);
+
+    // Calculate mean (average) concentrations per species
     nameOfSpecies.forEach((speciesName, index) => {
         bacteriaData.forEach((bacterium) => {
-            const conc = bacterium.cytoplasmConcentrations[speciesName];
-            meanConcentrations[index] += conc;
+            meanConcentrations[index] += bacterium.cytoplasmConcentrations[speciesName];
         });
+        meanConcentrations[index] /= bacteriaData.length;
     });
 
-    // Divide by count to get mean
-    for (let i = 0; i < meanConcentrations.length; i++) {
-        meanConcentrations[i] /= bacteriaData.length;
-    }
-    
-    // Calculate variance (squared differences from mean)
+    // Calculate standard deviation per species
     nameOfSpecies.forEach((speciesName, index) => {
         bacteriaData.forEach((bacterium) => {
-            const conc = bacterium.cytoplasmConcentrations[speciesName];
-            const diff = conc - meanConcentrations[index];
+            const diff = bacterium.cytoplasmConcentrations[speciesName] - meanConcentrations[index];
             stdDeviations[index] += diff * diff;
         });
+        stdDeviations[index] = Math.sqrt(stdDeviations[index] / bacteriaData.length);
     });
-    
-    // Divide by count and take square root to get standard deviation
-    for (let i = 0; i < stdDeviations.length; i++) {
-        stdDeviations[i] = Math.sqrt(stdDeviations[i] / bacteriaData.length);
-    }
-    
+
     return {
         mean: meanConcentrations,
         standardDeviation: stdDeviations

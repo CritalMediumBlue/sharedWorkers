@@ -104,7 +104,7 @@ function singleStep() {
 
     const currentBacteria = bacteriaTimeSeries[session.currentTimeStep];
     ({ bacteriaDataUpdated, concentrations } =
-        updateSimulation(currentBacteria, constants.fromStepToMinutes));
+        updateSimulation(currentBacteria, constants.fromStepToMinutes, previusParams));
 
     const globalParams = getGlobalSpeciesConcentrations(bacteriaDataUpdated);
     updateHistories(globalParams.mean, globalParams.standardDeviation);

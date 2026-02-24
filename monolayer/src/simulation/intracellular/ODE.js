@@ -36,13 +36,16 @@ window.vars = {
 };
  
 window.params = {
+    TIME_SCALE_SECONDS: 1, // dimensional: 1 second = 1 second (no rescaling needed)
+    ODE_TIME_STEP: 2,      // seconds — ODE integration step size
+    ADI_TIME_STEP: 0.5,    // seconds — ADI diffusion step size
     averageAreaPerBacterium: 4.8, // um2  total microfluidic chamber area / average number of bacteria
-    DiffusionRate: 100, // um2/s
+    DiffusionRate: 90, // um2/s
     Kin:     10,    // 1/s  0.03 - 0.1
-    Kout:    3,   // nM/s 
+    Kout:    1,   // nM/s 
     Ksyn:    0.05,    // nM/s   (supported by literature) 0.03
-    Kon:     0.001,   // nM-1s-1 (supported by literature)
-    Koff:    0.04,     // 1/s-1   (calculated based on the kd and the kon)
+    Kon:     0.001,   // nM-1 s-1 (supported by literature)
+    Koff:    0.04,     // 1/s   (calculated based on the kd and the kon)
     DilRate: 0.000256, // 1/s   (in line with a 45min doubling time)
     KF:      0.1,    // nM/s   (based on literature) 10 - 75
     Kr:      50,       // nM     (based on literature)
@@ -52,4 +55,3 @@ window.params = {
     PR_initial: 100,   // nM     (initial concentration of PR)
     F_initial: 150,    // nM     (initial concentration of F)
 };
-

@@ -16,7 +16,7 @@ export const createConstants = () => {
     const constants = {
         numberOfTimeSteps: 0, // Total number of time steps in the simulation
         fromStepToMinutes: 0, // Conversion factor from simulation steps to minutes
-        doublingTime: 45
+        doublingTime: 45 // the average bacteria doubling time is 45 minutes
     };
     return sealObject(constants);
 } 
