@@ -17,6 +17,10 @@ import { wireControllerHandlers } from './controller-handlers.js';
 export function mountControllerView() {
 
     
+        const firstWorkerName = prompt('Enter name for the simulation:', '1');
+        initializeNewSimulation(firstWorkerName, null);
+
+}
 
 
     const initializeNewSimulation = (workerName, cloneData = null) => {
@@ -44,6 +48,9 @@ export function mountControllerView() {
             state,
             newSimulation: initializeNewSimulation,
         });
+         //load default equations and default data. 
+
+
 
         ({ send } = connectToWorker(
             ['equations:loaded', 'data:loaded', 'error'],
@@ -76,9 +83,3 @@ export function mountControllerView() {
             }, 0);
         }
     }
-
-    
-        const firstWorkerName = prompt('Enter name for the simulation:', '1');
-        initializeNewSimulation(firstWorkerName, null);
-
-}
