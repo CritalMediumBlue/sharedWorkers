@@ -6,6 +6,9 @@ import { setupCapsulePool, updateCapsulesPCA, setBacterialColor, resetPCAs } fro
 import { CONFIG } from '../config.js';
 
 export function mountPhasePortraitView(workerName) {
+    let spriteX_max = null;
+    let spriteY_max = null;
+    let spriteZ_max = null;
     let stage = {};
     let capsules = [];
     let latestBacteria = null;
@@ -13,6 +16,7 @@ export function mountPhasePortraitView(workerName) {
     let xAxisName = '';
     let yAxisName = ''; 
     let zAxisName = '';
+    let maxConcentrations; // Track max concentrations for axis scale labels
 
     // Visualization settings (controlled by controller's Visualization tab)
     let capsuleVisibility = true;
@@ -20,6 +24,8 @@ export function mountPhasePortraitView(workerName) {
     let helperGridyz = null;
     let helperGridxz = null;
     let helperAxes = null;
+    let updateScaleLabels = false; 
+
 
     // ── Worker connection ──
     connectToWorker(
@@ -32,19 +38,16 @@ export function mountPhasePortraitView(workerName) {
         switch (msg.type) {
             case 'state:init':
                 setupScene(msg.data);
-                resetPCAs(); // reset PCA mins/maxs when a new simulation starts
+                resetPCAs(); // reset PCA maxs when a new simulation starts
                 break;
 
             case 'state:bacteria':
                 latestBacteria = msg.data;
                 break;
 
-
             case 'state:coloringRule':
                 applyColoringRule(msg.data);
                 break;
-
-           
         }
     }
 
@@ -84,7 +87,6 @@ export function mountPhasePortraitView(workerName) {
         stage.scene.add(helperGridxy);
         stage.scene.add(helperGridyz);
         stage.scene.add(helperGridxz);
-       
 
         // Set fog
         stage.scene.fog = new THREE.Fog(SCENE.FOG_COLOR, SCENE.FOG_NEAR, SCENE.FOG_FAR);
@@ -97,25 +99,74 @@ export function mountPhasePortraitView(workerName) {
             zAxisName = initData.speciesNames?.[2] || 'Species 3';
         }
 
-        // Axis labels — placed just beyond the tip of each axis (axes go 0→1)
-        const labelX = createAxisLabel(xAxisName, { x: 1.05, y: 0,    z: 0    });
-        const labelY = createAxisLabel(yAxisName, { x: 0,    y: 1.05, z: 0    });
-        const labelZ = createAxisLabel(zAxisName, { x: 0,    y: 0,    z: 1.05 });
+        // Axis name labels — placed just beyond the tip of each axis (axes go 0→1)
+        const labelX = createAxisLabel(xAxisName, { x: 1.1, y: 0.05, z: 0.05 });
+        const labelY = createAxisLabel(yAxisName, { x: 0.05, y: 1.1, z: 0.05 });
+        const labelZ = createAxisLabel(zAxisName, { x: 0.05, y: 0,   z: 1.1  });
         stage.scene.add(labelX);
         stage.scene.add(labelY);
         stage.scene.add(labelZ);
 
+        // Min labels are always 0
+        const minLabel = createAxisLabel('0.00', { x: 0, y: 0, z: 0 });
+        stage.scene.add(minLabel);
+   
         ready = true;
     }
-
-    
 
     function applyColoringRule(rule) {
         Object.entries(rule).forEach(([species, color]) => {
             setBacterialColor(species, color);
         });
-        updateCapsulesPCA(latestBacteria, THREE, capsules, capsuleVisibility, CONFIG.PHASE_PORTRAIT.CAPSULE_SCALE);
+        // Trigger a label refresh on next frame
+        updateScaleLabels = true;
     }
+
+    // ── Render loop ──
+    function animate() {
+        requestAnimationFrame(animate);
+        if (!ready) return;
+
+        if (latestBacteria) {
+            const newMaxs = updateCapsulesPCA(latestBacteria, THREE, capsules, capsuleVisibility, CONFIG.PHASE_PORTRAIT.CAPSULE_SCALE);
+
+            if (newMaxs) {
+                // Detect if any max value has changed (value comparison)
+                const changed = !maxConcentrations ||
+                    newMaxs.some((v, i) => v !== maxConcentrations[i]);
+
+                if (changed) {
+                    maxConcentrations = newMaxs.slice();
+                    updateScaleLabels = true;
+                }
+            }
+        }
+
+        if (updateScaleLabels && maxConcentrations) {
+            updateAxesLabels(maxConcentrations);
+            updateScaleLabels = false;
+        }
+
+        stage.renderer.render(stage.scene, stage.camera);
+    }
+
+    animate();
+
+    function updateAxesLabels(maxConcentrations) {
+        if (spriteX_max) stage.scene.remove(spriteX_max);
+        if (spriteY_max) stage.scene.remove(spriteY_max);
+        if (spriteZ_max) stage.scene.remove(spriteZ_max);
+
+        spriteX_max = createAxisLabel(maxConcentrations[0].toFixed(2), { x: 1.00, y: 0, z: 0 });
+        stage.scene.add(spriteX_max);
+
+        spriteY_max = createAxisLabel(maxConcentrations[1].toFixed(2), { x: 0, y: 1.00, z: 0 });
+        stage.scene.add(spriteY_max);
+
+        spriteZ_max = createAxisLabel(maxConcentrations[2].toFixed(2), { x: 0, y: 0, z: 1.00 });
+        stage.scene.add(spriteZ_max);
+    }
+
 
     /**
      * Creates a billboard text label (Sprite) at the given position.
@@ -146,24 +197,4 @@ export function mountPhasePortraitView(workerName) {
 
         return sprite;
     }
-
-
-
-    // ── Render loop ──
-    function animate() {
-        requestAnimationFrame(animate);
-        if (!ready) return;
-
-
-
-        if (latestBacteria) {
-            updateCapsulesPCA(latestBacteria, THREE, capsules, capsuleVisibility, CONFIG.PHASE_PORTRAIT.CAPSULE_SCALE);
-           // latestBacteria = null; // consume
-        }
-
-  
-        stage.renderer.render(stage.scene, stage.camera);
-    }
-
-    animate();
 }

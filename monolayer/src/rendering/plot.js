@@ -44,7 +44,7 @@ function generateDatasets(intVars, colorRule) {
     const cssColor = `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
     
     datasets.push({
-      label: species + ' [nM]',
+      label: species,
       data: [],
       borderColor: cssColor,
       backgroundColor: cssColor,
@@ -63,8 +63,7 @@ function generateDatasets(intVars, colorRule) {
 export function updatePlot(data, chart, colorRule) {
     if (!data) return;
     
-    let means = data[0];
-    let stdDevs = data[1];
+    const means = data[0];
     
     const numberOfSpecies = means.length - 1;
     
@@ -85,7 +84,7 @@ export function updatePlot(data, chart, colorRule) {
         for (let i = 0; i < numberOfSpecies; i++) {
             const dataset = chart.data.datasets[i];
             if (dataset && dataset.label) {
-                const speciesName = dataset.label.replace(' [nM]', '');
+                const speciesName = dataset.label;
                 const colorObj = colorRule[speciesName];
                 
                 if (colorObj) {
@@ -95,37 +94,6 @@ export function updatePlot(data, chart, colorRule) {
                 }
             }
         }
-    }
-    
-    const slicedSD = sliceData(startMean, endMean, stdDevs);
-    
-    const upperBounds = [];
-    const lowerBounds = [];
-    
-    for (let i = 0; i < numberOfSpecies; i++) {
-        upperBounds[i] = [];
-        lowerBounds[i] = [];
-        
-        if (slicedDataMean[i+1] && slicedSD[i+1]) {
-            for (let j = 0; j < slicedDataMean[i+1].length; j++) {
-                upperBounds[i].push(slicedDataMean[i+1][j] + slicedSD[i+1][j]/2);
-                lowerBounds[i].push(Math.max(0, slicedDataMean[i+1][j] - slicedSD[i+1][j]/2));
-            }
-        }
-    }
-    
-    for (let i = 0; i < numberOfSpecies; i++) {
-        const datasetIndex = numberOfSpecies + (i * 2);
-        let fillColor = chart.data.datasets[i].backgroundColor;
-        
-        createFilledAreaDataset(
-            chart, 
-            datasetIndex, 
-            `${chart.data.datasets[i].label} (±SD)`, 
-            fillColor, 
-            upperBounds[i], 
-            lowerBounds[i]
-        );
     }
     
     chart.update();
@@ -140,45 +108,4 @@ function sliceData(start, end, data) {
       d.push(data[i].slice(start, end));
   }
   return d;
-}
-
-/**
- * Creates a filled area dataset between upper and lower bounds
- */
-function createFilledAreaDataset(chart, index, label, color, upperData, lowerData) {
-  const cssColor = color.replace(/rgba?\([^)]+\)/, match => {
-    const values = match.match(/[\d.]+/g);
-    return `rgba(${values[0]}, ${values[1]}, ${values[2]}, 0.3)`;
-  });
-
-  if (!chart.data.datasets[index]) {
-    chart.data.datasets[index] = {
-      label: label,
-      data: upperData,
-      borderColor: 'white', 
-      backgroundColor: cssColor,
-      fill: '+1',
-      tension: 0.1,
-      pointRadius: 0,
-      borderWidth: 1, 
-      order: 2
-    };
-  } else {
-    chart.data.datasets[index].data = upperData;
-    chart.data.datasets[index].backgroundColor = cssColor;
-  }
-
-  if (!chart.data.datasets[index + 1]) {
-    chart.data.datasets[index + 1] = {
-      label: '', 
-      data: lowerData,
-      borderColor: 'white', 
-      pointRadius: 0,
-      borderWidth: 1,
-      tension: 0.1,
-      order: 2
-    };
-  } else {
-    chart.data.datasets[index + 1].data = lowerData;
-  }
 }

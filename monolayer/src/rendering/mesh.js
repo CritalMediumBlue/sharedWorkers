@@ -44,8 +44,8 @@ export function setupMesh(stage, THREE, GRID) {
 }
 
 
-const calculateColor = (concentration) => {
-    let con = concentration + 2.5;
+export const calculateColor = (concentration) => {
+    let con = concentration ;
     const red = (Math.sin(con) + 1) / 2;
     const green = (Math.sin(con - (2 * Math.PI / 3)) + 1) / 2;
     const blue = (Math.sin(con - (4 * Math.PI / 3)) + 1) / 2;
@@ -79,4 +79,5 @@ export function updateSurfaceMesh(surfaceMesh, concentrationData, heightMultipli
 
     surfaceMesh.geometry.attributes.position.needsUpdate = true;
     surfaceMesh.geometry.attributes.color.needsUpdate = true;
+
 }

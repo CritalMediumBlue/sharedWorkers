@@ -107,7 +107,7 @@ function singleStep() {
         updateSimulation(currentBacteria, constants.fromStepToMinutes, previusParams));
 
     const globalParams = getGlobalSpeciesConcentrations(bacteriaDataUpdated);
-    updateHistories(globalParams.mean, globalParams.standardDeviation);
+    updateHistories(globalParams.mean);
     histories = getHistories();
     session.currentTimeStep++;
     stepCount++;
@@ -138,7 +138,7 @@ function tick() {
     singleStep();
 
     // Publish at different cadences (matching original render logic)
-    if (stepCount % 1 === 0) {
+    if (stepCount % 2 === 0) {
         publish('state:bacteria', bacteriaDataUpdated);
 
         if (selectedSpecies && concentrations?.[selectedSpecies]) {
@@ -155,7 +155,7 @@ function tick() {
         });
     }
 
-    if (stepCount % 1 === 0) {
+    if (stepCount % 2 === 0) {
         publish('state:histories', histories);
     }
 

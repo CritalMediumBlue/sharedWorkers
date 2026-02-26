@@ -11,7 +11,7 @@ export function createPlotOptions() {
         plugins: {
             title: {
                 display: true,
-                text: "Average intracellular concentrations with standard deviation",
+                text: "Average intracellular concentrations",
                 color: axisTextColor,
                 font: {
                     size: 16

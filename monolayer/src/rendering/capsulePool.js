@@ -91,10 +91,10 @@ export function updateCapsules(bacteriaData, THREE, capsules, capsuleVisibility)
     });
 } 
 
-let PCAmins = [0, 0, 0];
+// Minimum is always 0 (concentrations are non-negative), so we only track the max.
 let PCAmaxs = [0, 0, 0];
+
 export function resetPCAs() {
-    PCAmins = [0, 0, 0];
     PCAmaxs = [0, 0, 0];
 }
 
@@ -121,17 +121,12 @@ export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibili
     // Collect all PCA values per axis across all bacteria
     const allPCA = bacteriaData.map(b => {
         const vals = Object.values(b.cytoplasmConcentrations);
-        return [vals[0] , vals[1] , vals[2] ]; // collect the first three species
+        return [vals[0], vals[1], vals[2]]; // collect the first three species
     });
 
-    //allPCA is an array of arrays: [[b1_x, b1_y, b1_z], [b2_x, b2_y, b2_z], ...]
-    // We need to find the min and max for each axis to normalize later
-
-    const newPCAmins = [0, 1, 2].map(i => Math.min(...allPCA.map(p => p[i]))); // i is the index for x, y, z. p is the index for each bacterium
+    // Update running maximums (min is always 0)
     const newPCAmaxs = [0, 1, 2].map(i => Math.max(...allPCA.map(p => p[i])));
-
     for (let i = 0; i < 3; i++) {
-        PCAmins[i] = Math.min(PCAmins[i], newPCAmins[i]);
         PCAmaxs[i] = Math.max(PCAmaxs[i], newPCAmaxs[i]);
     }
 
@@ -146,10 +141,11 @@ export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibili
 
         const raw = allPCA[idx];
 
-        // Normalize each axis to [0, 1]; if range is zero, place at 0.5
-        const xPCA = PCAmaxs[0] !== PCAmins[0] ? (raw[0] - PCAmins[0]) / (PCAmaxs[0] - PCAmins[0]) : 0.5;
-        const yPCA = PCAmaxs[1] !== PCAmins[1] ? (raw[1] - PCAmins[1]) / (PCAmaxs[1] - PCAmins[1]) : 0.5;
-        const zPCA = PCAmaxs[2] !== PCAmins[2] ? (raw[2] - PCAmins[2]) / (PCAmaxs[2] - PCAmins[2]) : 0.5;
+        // Normalize each axis to [0, 1]; min is always 0, so divide by max.
+        // If max is 0, place at 0 (no signal).
+        const xPCA = PCAmaxs[0] > 0 ? raw[0] / PCAmaxs[0] : 0;
+        const yPCA = PCAmaxs[1] > 0 ? raw[1] / PCAmaxs[1] : 0;
+        const zPCA = PCAmaxs[2] > 0 ? raw[2] / PCAmaxs[2] : 0;
    
         capsule.position.set(xPCA, yPCA, zPCA);
         capsule.scale.set(capsuleScale, capsuleScale, capsuleScale);
@@ -192,9 +188,8 @@ export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibili
         capsule.visible = true;
     });
 
-  
-
-  
+    // Return only the maxs; mins are always [0, 0, 0]
+    return PCAmaxs;
 } 
 
 

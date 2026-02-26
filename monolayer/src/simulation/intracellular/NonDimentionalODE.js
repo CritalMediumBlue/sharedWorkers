@@ -42,7 +42,7 @@ window.params = {
     TIME_SCALE_SECONDS: 0.048,
     ODE_TIME_STEP: 200,   // non-dimensional time units — safe given slowest rate Kbind ≈ 0.002 (stability limit ~469)
     ADI_TIME_STEP: 25,    // non-dimensional time units — ADI is unconditionally stable for diffusion
-    secrete: 0.000277,   
+    secrete: 0.000277, //  
     Kin: 0.1111, // this is the non-dimensional Pi group for the uptake of the signal
     DiffusionRate: 1, // this is non-dimensional Pi group for the laplacian
     Kbind:  0.002133,

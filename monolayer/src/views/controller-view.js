@@ -23,6 +23,8 @@ export function mountControllerView() {
 }
 
 
+
+
     const initializeNewSimulation = (workerName, cloneData = null) => {
         const paneDiv = document.createElement('div');
         paneDiv.id = 'pane';
@@ -49,6 +51,7 @@ export function mountControllerView() {
             newSimulation: initializeNewSimulation,
         });
          //load default equations and default data. 
+         
 
 
 
