@@ -57,7 +57,11 @@ function inheritConcentrations(ID, idx, concentrationsState, state) {
     }
 }
 
-function simulateConcentrations(speciesNames,
+/**
+ * Explicit (forward) Euler method for integrating intracellular ODEs.
+ * Kept for reference / fallback.
+ */
+function simulateConcentrationsEuler(speciesNames,
   interiorManager,
   variables,
   parameters,
@@ -81,6 +85,84 @@ function simulateConcentrations(speciesNames,
     }
 }
 
+/**
+ * 4th-order Runge-Kutta (RK4) method for integrating intracellular ODEs.
+ *
+ * All species are evaluated simultaneously at each stage (Jacobi style),
+ * so coupled equations are handled correctly.
+ *
+ * Each stage costs one evaluation of all intEquations; total cost is 4×
+ * per step compared to Euler, but with O(h⁴) local truncation error.
+ */
+function simulateConcentrationsRK4(speciesNames,
+  interiorManager,
+  variables,
+  parameters,
+  intEquations,
+  ID,
+  timeLapse,
+  ) {
+    const n = speciesNames.length;
+    const h = timeLapse;
+
+    // Read current concentrations into a local array
+    const y = new Array(n);
+    for (let i = 0; i < n; i++) {
+        y[i] = interiorManager[speciesNames[i]].get(ID);
+    }
+
+    /**
+     * Evaluate all reaction rates given a concentration vector.
+     * Sets variables.int to the provided concentrations before evaluating.
+     * @param {number[]} conc
+     * @returns {number[]} rates
+     */
+    function evalRates(conc) {
+        for (let i = 0; i < n; i++) {
+            variables.int[speciesNames[i]].val = conc[i];
+        }
+        const rates = new Array(n);
+        for (let i = 0; i < n; i++) {
+            rates[i] = intEquations[speciesNames[i]](variables, parameters);
+        }
+        return rates;
+    }
+
+    // Stage 1: rates at the start of the step
+    const k1 = evalRates(y);
+
+    // Stage 2: rates at the midpoint using k1
+    const y2 = new Array(n);
+    for (let i = 0; i < n; i++) {
+        y2[i] = Math.max(0, y[i] + (h / 2) * k1[i]);
+    }
+    const k2 = evalRates(y2);
+
+    // Stage 3: rates at the midpoint using k2
+    const y3 = new Array(n);
+    for (let i = 0; i < n; i++) {
+        y3[i] = Math.max(0, y[i] + (h / 2) * k2[i]);
+    }
+    const k3 = evalRates(y3);
+
+    // Stage 4: rates at the end of the step using k3
+    const y4 = new Array(n);
+    for (let i = 0; i < n; i++) {
+        y4[i] = Math.max(0, y[i] + h * k3[i]);
+    }
+    const k4 = evalRates(y4);
+
+    // Combine stages and write back
+    for (let i = 0; i < n; i++) {
+        let newConc = y[i] + (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+        if (newConc < 0) newConc = 0;
+        interiorManager[speciesNames[i]].set(ID, newConc);
+        variables.int[speciesNames[i]].val = newConc;
+    }
+}
+
+// Active integrator — swap to simulateConcentrationsEuler to revert
+const simulateConcentrations = simulateConcentrationsRK4;
 
 
 /** First Strang half-step: react, then couple sources/sinks to the diffusion grid */
@@ -103,4 +185,3 @@ export const reactionHalfStep = (positionMap, timeLapse, concentrationsState, st
         simulateConcentrations(state.speciesNames, state.interiorManager, state.variables, state.parameters, state.intEquations, id, timeLapse);
     }
 };
-

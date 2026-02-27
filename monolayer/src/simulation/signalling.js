@@ -83,13 +83,13 @@ export const updateSignallingCircuit = (currentBacteria, HEIGHT, WIDTH, dx, dura
     const timeLapse = parameters.ODE_TIME_STEP ;
     const deltaT    = parameters.ADI_TIME_STEP ;
 
-    const numberOfIterations = Math.max(1, Math.round(durationOfOneVEStep / timeLapse));
+    const numberOfIterations =  Math.round(durationOfOneVEStep / timeLapse)
 
     createPositionMap(currentBacteria, HEIGHT, WIDTH, dx);
 
     setADIProperties(WIDTH, HEIGHT, parameters.DiffusionRate, dx, deltaT);
 
-    const totalNumberOfADIIterations = Math.max(1, Math.round(timeLapse / deltaT));
+    const totalNumberOfADIIterations =  Math.round(timeLapse / deltaT)
 
     // Prepare state object for ODE integration
     const state = {
