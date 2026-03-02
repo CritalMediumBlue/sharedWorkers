@@ -102,7 +102,6 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         if (state.dataLoaded && state.equationsLoaded) {
             execFolder.disabled = false;
         }
-        console.log('check was called')
     }
 
     function updateStatus() {

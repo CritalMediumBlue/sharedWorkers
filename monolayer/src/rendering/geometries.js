@@ -59,5 +59,6 @@ export function updateCapsuleColor(capsule, THREE, cytoplasmConcentrations) {
         capsule.material.opacity = color[1];
         capsule.children[0].material.color.copy(threeColor.clone().multiplyScalar(0.1));
         capsule.renderOrder = 0;
+
     
 }

@@ -120,6 +120,7 @@ export function mountPhasePortraitView(workerName) {
         });
         // Trigger a label refresh on next frame
         updateScaleLabels = true;
+        updateCapsulesPCA(latestBacteria, THREE, capsules, capsuleVisibility, CONFIG.PHASE_PORTRAIT.CAPSULE_SCALE);
     }
 
     // ── Render loop ──
