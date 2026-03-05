@@ -56,7 +56,7 @@ export function mountControllerView() {
 
 
         ({ send } = connectToWorker(
-            ['equations:loaded', 'data:loaded', 'error'],
+            ['equations:loaded', 'data:loaded', 'error', 'state:save'],
             onMessage,
             workerName
         ));

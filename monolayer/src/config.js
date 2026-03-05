@@ -13,16 +13,16 @@ export const CONFIG = {
         CONTROLS_MIN_DISTANCE: 10 
     },
     BACTERIUM: {
-        CAP_SEGMENTS: 1,
-        RADIAL_SEGMENTS: 3,
+        CAP_SEGMENTS: 3,
+        RADIAL_SEGMENTS: 7,
         INITIAL_POOL_SIZE: 2000,
         POOL_GROWTH_FACTOR: 1.1,
         WIREFRAME_SCALE: 1.02,
     },
     GRID: {
-        WIDTH: 100,
-        HEIGHT: 60,
-        dx: 1
+        WIDTH: 200,
+        HEIGHT: 120,
+        dx: 0.5
     },
     PHASE_PORTRAIT: {
         FOG_COLOR: 0x0f0000,

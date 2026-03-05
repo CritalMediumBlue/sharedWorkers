@@ -40,6 +40,7 @@ let selectedSpecies = null;
 let coloringRule = {};
 let intervalId = null;
 let stepCount = 0;
+let savingState = true;
 
 const TICK_MS = 16; // ≈60 Hz, similar to requestAnimationFrame
 
@@ -67,6 +68,8 @@ function buildInitPayload() {
         coloringRule: { ...coloringRule },
     };
 }
+
+
 
 // ─── Simulation lifecycle ───────────────────────────────────────────────────
 
@@ -111,7 +114,24 @@ function singleStep() {
     histories = getHistories();
     session.currentTimeStep++;
     stepCount++;
+
+
+    if (savingState && stepCount % 40 === 0) {
+        console.log(`Saving state at step ${session.currentTimeStep} / ${constants.numberOfTimeSteps}`);
+        savestate();
+    }
+
+
+
 }
+
+function savestate() {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        publish('state:save', {
+            filename: `bacteria_state_${timestamp}.json`,
+            data: bacteriaDataUpdated,
+        });
+    }
 
 function publishAllState() {
     publish('state:bacteria', bacteriaDataUpdated);
@@ -297,6 +317,10 @@ self.onconnect = (e) => {
             case 'command:setBacteriaColor':
                 coloringRule[data.species] = data.color;
                 publish('state:coloringRule', { ...coloringRule });
+                break;
+
+            case 'command:setSaving':
+                savingState = !!data.enabled;
                 break;
 
             case 'command:viz':

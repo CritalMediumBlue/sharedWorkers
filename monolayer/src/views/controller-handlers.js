@@ -20,6 +20,8 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         base,
         openWindows,
         cloneBtn,
+        startSaveBtn,
+        stopSaveBtn,
     } = ui;
 
     cloneBtn.on('click', () => {
@@ -53,6 +55,8 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     playBtn.on('click', () => sendMessage({ type: 'command:toggle' }));
     resetBtn.on('click', () => sendMessage({ type: 'command:reset' }));
     stepBtn.on('click', () => sendMessage({ type: 'command:stepForward' }));
+    startSaveBtn.on('click', () => sendMessage({ type: 'command:setSaving', data: { enabled: true } }));
+    stopSaveBtn.on('click', () => sendMessage({ type: 'command:setSaving', data: { enabled: false } }));
 
     open3dBtn.on('click', () => openDashboard(`${base}?view=3d&worker=${state.workerName}`, 'scene', 'width=800,height=600'));
     openPlotBtn.on('click', () => openDashboard(`${base}?view=plot&worker=${state.workerName}`, 'plot', 'width=1600,height=300'));
@@ -93,6 +97,17 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
             case 'error':
                 console.error('[Worker error]', msg.data.message);
                 break;
+            case 'state:save': {
+                const json = JSON.stringify(msg.data.data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = msg.data.filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                break;
+            }
             case 'state:cloned':
                 break;
         }

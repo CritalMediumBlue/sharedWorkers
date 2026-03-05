@@ -30,9 +30,9 @@ export function setupStage(SCENE, THREE, OrbitControls, stage, mesh, capsules) {
 
 // ─── Renderer ───────────────────────────────────────────────────────────────
 
-function createRenderer(THREE, ratio = 0.5) { //ratio 
+function createRenderer(THREE, ratio = 1) { //ratio 
     const renderer = new THREE.WebGLRenderer({
-        antialias: false,
+        antialias: true,
         preserveDrawingBuffer: true,
     });
 
