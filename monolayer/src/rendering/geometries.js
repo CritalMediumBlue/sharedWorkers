@@ -16,10 +16,10 @@ const getColor = (cytoplasmicconcentrations) => {
     let newBlue = 0;
     let newAlpha = 0;
     Object.keys(cytoplasmicconcentrations).forEach(species => {
-        newRed   += coloringRule[species].r * cytoplasmicconcentrations[species] * coloringRule[species].intesity;
-        newGreen += coloringRule[species].g * cytoplasmicconcentrations[species] * coloringRule[species].intesity;
-        newBlue  += coloringRule[species].b * cytoplasmicconcentrations[species] * coloringRule[species].intesity;
-        newAlpha += coloringRule[species].a * cytoplasmicconcentrations[species] * coloringRule[species].intesity;
+        newRed   += coloringRule[species].r * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
+        newGreen += coloringRule[species].g * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
+        newBlue  += coloringRule[species].b * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
+        newAlpha += coloringRule[species].a * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
     });
 
     return [`rgb(${Math.round(newRed)}, ${Math.round(newGreen)}, ${Math.round(newBlue)})`, newAlpha / 2];

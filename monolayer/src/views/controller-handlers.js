@@ -137,7 +137,7 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         Object.keys(local).forEach((paramName) => {
             const binding = paramsFolder.addBinding(local, paramName, {
                 label: paramName,
-                step: 0.00001,
+                step: 0.0000001,
             });
             binding.on('change', () => {
                 sendMessage({ type: 'command:setParam', data: { paramName, value: local[paramName] } });
@@ -162,7 +162,7 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         };
         const meshScaleSettings = {
             meshHeightScale: 60,
-            meshTranslationZ: 0,
+            meshTranslationZ: -2,
             colorMultiplier: 100,
         };
 
@@ -210,12 +210,12 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         });
 
         const someColors = [
-            { r: 0, g: 0, b: 255, a: 1, intesity: 0 }, 
-            { r: 0, g: 255, b: 0, a: 1, intesity: 0 }, 
-            { r: 255, g: 0, b: 0, a: 1, intesity: 0 }, 
-            { r: 255, g: 0, b: 255, a: 1, intesity: 0 }, 
-            { r: 0, g: 255, b: 255, a: 1, intesity: 0 }, 
-            { r: 255, g: 255, b: 0, a: 1, intesity: 0 }
+            { r: 0, g: 0, b: 255, a: 1, intensity: 0 }, 
+            { r: 0, g: 255, b: 0, a: 1, intensity: 0 }, 
+            { r: 255, g: 0, b: 0, a: 1, intensity: 0 }, 
+            { r: 255, g: 0, b: 255, a: 1, intensity: 0 }, 
+            { r: 0, g: 255, b: 255, a: 1, intensity: 0 }, 
+            { r: 255, g: 255, b: 0, a: 1, intensity: 0 }
         ];
 
         const PARAMS = {};
@@ -223,9 +223,9 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
             PARAMS[name] = { ...someColors[i % someColors.length] };
 
             const colorBinding = colorPickerFolder.addBinding(PARAMS, name);
-            const intensityBinding = colorPickerFolder.addBinding(PARAMS[name], 'intesity', {
+            const intensityBinding = colorPickerFolder.addBinding(PARAMS[name], 'intensity', {
                 label: 'Intensity',
-                step: 0.001,
+                step: 0.00001,
             });
 
             sendMessage({ type: 'command:setBacteriaColor', data: { species: name, color: PARAMS[name] } });

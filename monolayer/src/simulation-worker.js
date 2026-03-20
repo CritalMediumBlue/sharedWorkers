@@ -46,7 +46,7 @@ const TICK_MS = 16; // ≈60 Hz, similar to requestAnimationFrame
 
 // Default colours for species (visible defaults so bacteria aren't invisible)
 const defaultColors = [
-    { r: 0, g: 0,  b: 0,  a: 1, intesity: 1 }
+    { r: 0, g: 0,  b: 0,  a: 1, intensity: 1 }
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
