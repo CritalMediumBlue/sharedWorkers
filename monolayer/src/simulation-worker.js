@@ -312,6 +312,11 @@ self.onconnect = (e) => {
 
             case 'command:selectSpecies':
                 selectedSpecies = data.speciesName === 'null' ? null : data.speciesName;
+                //trigger rendering of new selected species by republishing current state
+                publish('state:concentrations', {
+                    species: selectedSpecies,
+                    conc: Array.from(concentrations?.[selectedSpecies]?.conc || []),
+                });
                 break;
 
             case 'command:setBacteriaColor':
