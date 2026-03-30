@@ -15,6 +15,7 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         statusTextState,
         statusTextEq,
         execFolder,
+        dataCollectFolder,
         paramsFolder,
         vizPage,
         base,
@@ -90,6 +91,7 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
                 state.dataLoaded = true;
                 state.data = msg.data;
                 state.dataFileTitle = msg.data.fileTitle || '';
+                buildSavingFrequencySlider();
                 updateStatus();
                 checkReady();
                 break;
@@ -142,6 +144,19 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
             binding.on('change', () => {
                 sendMessage({ type: 'command:setParam', data: { paramName, value: local[paramName] } });
             });
+        });
+    }
+
+    function buildSavingFrequencySlider(){
+        dataCollectFolder.disabled = false;
+        let freq = { value: 40 }; // default frequency
+        const savingFrequencySlider = dataCollectFolder.addBinding(freq, 'value', {
+            label: 'Saving frequency (steps)',
+            step: 1,
+            min: 1,
+        });
+        savingFrequencySlider.on('change', () => {
+            sendMessage({ type: 'command:setSavingFrequency', data: { frequency: freq.value } });
         });
     }
 

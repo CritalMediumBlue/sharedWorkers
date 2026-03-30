@@ -42,8 +42,11 @@ export function createControllerUI(paneDiv, workerName) {
     const resetBtn = execFolder.addButton({ title: '↺', label: 'Reset' });
     const stepBtn = execFolder.addButton({ title: '⏭', label: 'Step Forward' });
     const cloneBtn = execFolder.addButton({ title: '⎘', label: 'Clone Simulation' });
-    const startSaveBtn = execFolder.addButton({ title: '💾 Start Saving', label: 'Save state' });
-    const stopSaveBtn = execFolder.addButton({ title: '⏹ Stop Saving', label: 'Save state' });
+    const dataCollectFolder = executionPage.addFolder({ title: 'Data Collection' });
+    dataCollectFolder.disabled = true;
+  
+    const startSaveBtn = dataCollectFolder.addButton({ title: '💾 Start Saving', label: 'Save state' });
+    const stopSaveBtn = dataCollectFolder.addButton({ title: '⏹ Stop Saving', label: 'Save state' });
 
     const paramsPage = tab.pages[1];
     const paramsFolder = paramsPage.addFolder({ title: 'Parameters' });
@@ -90,5 +93,6 @@ export function createControllerUI(paneDiv, workerName) {
         cloneBtn,
         startSaveBtn,
         stopSaveBtn,
+        dataCollectFolder,
     };
 }

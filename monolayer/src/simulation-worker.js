@@ -41,6 +41,7 @@ let coloringRule = {};
 let intervalId = null;
 let stepCount = 0;
 let savingState = true;
+let freq = 40; // Save every N steps when savingState is true
 
 const TICK_MS = 16; // ≈60 Hz, similar to requestAnimationFrame
 
@@ -116,7 +117,7 @@ function singleStep() {
     stepCount++;
 
 
-    if (savingState && stepCount % 40 === 0) {
+    if (savingState && stepCount % freq === 0) {
         console.log(`Saving state at step ${session.currentTimeStep} / ${constants.numberOfTimeSteps}`);
         savestate();
     }
@@ -326,6 +327,10 @@ self.onconnect = (e) => {
 
             case 'command:setSaving':
                 savingState = !!data.enabled;
+                break;
+
+            case 'command:setSavingFrequency':
+                freq = Math.max(1, Math.floor(data.frequency));
                 break;
 
             case 'command:viz':

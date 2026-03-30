@@ -89,7 +89,7 @@ function analyzeBacteriaLineage(bacteriaTimeSeries, bacteriaLineage) {
 
     if (averageLifetime < 1 || isNaN(averageLifetime)) {
         console.warn("Average lifetime is less than 1 time step, which may indicate an issue with the data or lineage mapping. defaulting to 1 time step.")
-        return 80;
+        return 45;
     }
 
     return averageLifetime
