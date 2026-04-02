@@ -9,6 +9,7 @@
 import { createBacteriumSystem, updateSimulation, setParamFromGUI, getGlobalSpeciesConcentrations } from './simulation/simulationManager.js';
 import { createStates, createHistories, createConstants, updateHistories, getHistories, resetHistories } from './simulation/stateManager.js';
 import { processFileData } from './simulation/dataProcessor.js';
+import * as physicsManager from './simulation/physics/physicsManager.js';
 import { CONFIG } from './config.js';
 
 // ─── Connection management ──────────────────────────────────────────────────
@@ -42,6 +43,19 @@ let intervalId = null;
 let stepCount = 0;
 let savingState = true;
 let freq = 40; // Save every N steps when savingState is true
+let physicsMode = false;
+
+// Hardcoded single-capsule defaults for the physics path
+const PHYSICS_CAPSULE_CONFIG = {
+    id: 'b0',
+    x: 0,
+    y: 0,
+    angle: 0,
+    halfLength: 1.5,
+    radius: 0.5,
+};
+const PHYSICS_DT = 0.01;           // seconds per Rapier sub-step
+const PHYSICS_MAX_STEPS = 10000;   // finite upper bound so the loop always ends
 
 const TICK_MS = 16; // ≈60 Hz, similar to requestAnimationFrame
 
@@ -102,11 +116,46 @@ function init(processedData) {
     startLoop();
 }
 
+async function initPhysics() {
+    stopLoop();
+
+    await physicsManager.init(PHYSICS_CAPSULE_CONFIG);
+
+    const seedBacteria = physicsManager.getBacteriaSnapshot();
+    const lineageMap = { [PHYSICS_CAPSULE_CONFIG.id]: 0 };
+
+    ({ session } = createStates());
+
+    createBacteriumSystem(CONFIG, previusVars, previusParams, seedBacteria, lineageMap);
+
+    constants = createConstants();
+    createHistories(Object.keys(previusVars.int).length);
+    constants.numberOfTimeSteps = PHYSICS_MAX_STEPS;
+    constants.fromStepToMinutes = 0.1;
+    Object.freeze(constants);
+
+    resetHistories();
+    stepCount = 0;
+
+    publish('state:init', buildInitPayload());
+
+    session.play = true;
+    startLoop();
+}
+
 function singleStep() {
-    if (!session || !bacteriaTimeSeries) return;
+    if (!session) return;
     if (session.currentTimeStep >= constants.numberOfTimeSteps) return;
 
-    const currentBacteria = bacteriaTimeSeries[session.currentTimeStep];
+    let currentBacteria;
+    if (physicsMode) {
+        physicsManager.step(PHYSICS_DT);
+        currentBacteria = physicsManager.getBacteriaSnapshot();
+    } else {
+        if (!bacteriaTimeSeries) return;
+        currentBacteria = bacteriaTimeSeries[session.currentTimeStep];
+    }
+
     ({ bacteriaDataUpdated, concentrations } =
         updateSimulation(currentBacteria, constants.fromStepToMinutes, previusParams));
 
@@ -269,8 +318,14 @@ self.onconnect = (e) => {
             }
 
             // ── Simulation commands ──
+            case 'command:setPhysicsMode':
+                physicsMode = !!data.enabled;
+                break;
+
             case 'command:init':
-                if (storedProcessedData && previusVars && previusParams) {
+                if (physicsMode && previusVars && previusParams) {
+                    initPhysics();
+                } else if (storedProcessedData && previusVars && previusParams) {
                     init(storedProcessedData);
                 }
                 break;
@@ -291,7 +346,10 @@ self.onconnect = (e) => {
                 break;
 
             case 'command:reset':
-                if (storedProcessedData && previusVars && previusParams) {
+                if (physicsMode && previusVars && previusParams) {
+                    const wasPlaying = session ? session.play : false;
+                    initPhysics().then(() => { if (!wasPlaying) session.play = false; });
+                } else if (storedProcessedData && previusVars && previusParams) {
                     const wasPlaying = session ? session.play : false;
                     init(storedProcessedData);
                     if (!wasPlaying) session.play = false;
@@ -299,7 +357,7 @@ self.onconnect = (e) => {
                 break;
 
             case 'command:stepForward':
-                if (session && bacteriaTimeSeries) {
+                if (session && (physicsMode || bacteriaTimeSeries)) {
                     session.play = false;
                     singleStep();
                     publishAllState();

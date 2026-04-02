@@ -27,6 +27,8 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         cloneBtn,
         startSaveBtn,
         stopSaveBtn,
+        physicsToggle,
+        physicsState,
     } = ui;
 
     cloneBtn.on('click', () => {
@@ -80,6 +82,11 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     stepBtn.on('click', () => sendMessage({ type: 'command:stepForward' }));
     startSaveBtn.on('click', () => sendMessage({ type: 'command:setSaving', data: { enabled: true } }));
     stopSaveBtn.on('click', () => sendMessage({ type: 'command:setSaving', data: { enabled: false } }));
+
+    physicsToggle.on('change', (ev) => {
+        sendMessage({ type: 'command:setPhysicsMode', data: { enabled: ev.value } });
+        checkReady();
+    });
 
     open3dBtn.on('click', () => openDashboard(`${base}?view=3d&worker=${state.workerName}`, 'scene', 'width=800,height=600'));
     openPlotBtn.on('click', () => openDashboard(`${base}?view=plot&worker=${state.workerName}`, 'plot', 'width=1600,height=300'));
@@ -138,8 +145,12 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     }
 
     function checkReady() {
-        if (state.dataLoaded && state.equationsLoaded) {
+        if (physicsState.enabled && state.equationsLoaded) {
             execFolder.disabled = false;
+        } else if (state.dataLoaded && state.equationsLoaded) {
+            execFolder.disabled = false;
+        } else {
+            execFolder.disabled = true;
         }
     }
 

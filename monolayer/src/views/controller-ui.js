@@ -32,6 +32,11 @@ export function createControllerUI(paneDiv, workerName) {
     const loadEqBtnSim = simulationFolder.addButton({ title: '📂', label: 'Load equations file' });
 
     const loadDataBtnSim = simulationFolder.addButton({ title: '📂', label: 'Load generation rules' });
+
+    const physicsState = { enabled: false };
+    const physicsToggle = simulationFolder.addBinding(physicsState, 'enabled', {
+        label: 'Physics mode',
+    });
    
 
     executionPage.addBlade({ view: 'separator' });
@@ -137,5 +142,7 @@ executionPage.addBlade({ view: 'separator' });
         startSaveBtn,
         stopSaveBtn,
         dataCollectFolder,
+        physicsToggle,
+        physicsState,
     };
 }
