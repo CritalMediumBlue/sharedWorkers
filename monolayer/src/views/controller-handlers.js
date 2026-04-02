@@ -2,9 +2,11 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     const {
         loadEqBtn,
         loadDataBtn,
+        loadEqBtnSim,
         initBtn,
         playBtn,
         resetBtn,
+        loadDataBtnSim,
         stepBtn,
         open3dBtn,
         openPlotBtn,
@@ -16,6 +18,8 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         statusTextEq,
         execFolder,
         dataCollectFolder,
+        uiState,
+        uiStateTraj,
         paramsFolder,
         vizPage,
         base,
@@ -43,8 +47,26 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
         });
     });
 
+    loadEqBtnSim.on('click', () => {
+        pickFile('.js', (text, filename) => { // pick and then send to worker
+            sendMessage({ type: 'command:loadEquations', data: { text, filename } });
+            state.equationsText = text;
+            state.equationsFileTitle = filename;
+            updateStatus();
+        });
+    });
+
     loadDataBtn.on('click', () => {
         pickFile('.json', (text, filename) => { // pick and then send to worker
+            sendMessage({ type: 'command:loadData', data: { text, filename } });
+            state.dataText = text;
+            state.dataFileTitle = filename;
+            updateStatus();
+        });
+    });
+
+    loadDataBtnSim.on('click', () => {
+            pickFile('.json', (text, filename) => { // pick and then send to worker
             sendMessage({ type: 'command:loadData', data: { text, filename } });
             state.dataText = text;
             state.dataFileTitle = filename;
@@ -122,12 +144,15 @@ export function wireControllerHandlers({ sendMessage, ui, state, newSimulation})
     }
 
     function updateStatus() {
-        const eq = state.equationsLoaded ? '✅ Loaded' : 'No file loaded';
-        const dt = state.dataLoaded ? '✅ Loaded' : 'No file loaded';
+        
+        const eq = state.equationsLoaded ? '' : 'Not loaded';
+        const dt = state.dataLoaded ? '' : 'Not loaded';
         const eqTitle = state.equationsLoaded ? state.equations.fileTitle : '';
         const dtTitle = state.dataLoaded ? state.dataFileTitle : '';
         statusTextState.controller.value.setRawValue(`${dt} ${dtTitle}`);
         statusTextEq.controller.value.setRawValue(`${eq} ${eqTitle}`);
+        uiStateTraj.eqStatus = `${dtTitle} ${dt}`;
+        uiState.eqStatus = `${eqTitle} ${eq}`;
     }
 
     function buildParamSliders(params) {

@@ -16,23 +16,62 @@ export function createControllerUI(paneDiv, workerName) {
 
     const executionPage = tab.pages[0];
 
-    const loadFolder = executionPage.addFolder({ title: 'Load files to execute' });
+    const loadFolder = executionPage.addFolder({ title: 'Simulate from Precomputed Trajectories',
+        expanded: false
+     });
+   
     const loadEqBtn = loadFolder.addButton({ title: '📂', label: 'Load equations file' });
-    const statusTextEq = loadFolder.addBlade({
-        view: 'text',
-        readonly: true,
-        parse: (v) => String(v),
-        value: 'No file loaded',
+
+    const loadDataBtn = loadFolder.addButton({ title: '📂', label: 'Load trajectory data' });
+ 
+    executionPage.addBlade({ view: 'separator' });
+
+    const simulationFolder = executionPage.addFolder({ title: 'Generate Trajectories from Scratch' ,
+    expanded: false
     });
-    const loadDataBtn = loadFolder.addButton({ title: '📂', label: 'Load state file' });
-    const statusTextState = loadFolder.addBlade({
-        view: 'text',
-        readonly: true,
-        parse: (v) => String(v),
-        value: 'No file loaded',
-    });
+    const loadEqBtnSim = simulationFolder.addButton({ title: '📂', label: 'Load equations file' });
+
+    const loadDataBtnSim = simulationFolder.addButton({ title: '📂', label: 'Load generation rules' });
+   
 
     executionPage.addBlade({ view: 'separator' });
+/*    const statusTextState = executionPage.addBlade({
+        view: 'text',
+        readonly: true,
+        parse: (v) => String(v),
+        value: 'No trajectories file loaded',
+    }); */
+
+/*     const statusTextEq = executionPage.addBlade({
+        view: 'text',
+        readonly: true,
+        parse: (v) => String(v),
+        value: 'No equations file loaded',
+    }); */
+
+
+const uiState = {
+    eqStatus: 'Not loaded',
+};
+
+const statusTextEq = executionPage.addBinding(uiState, 'eqStatus', {
+    readonly:true,
+    label:'Equations file'
+});
+
+
+const uiStateTraj = {
+    eqStatus: 'Not loaded',
+};
+
+const statusTextState = executionPage.addBinding(uiStateTraj, 'eqStatus', {
+    readonly:true,
+    label:'Trajectory file'
+});
+
+executionPage.addBlade({ view: 'separator' });
+
+
 
     const execFolder = executionPage.addFolder({ title: 'Manage Simulation' });
     execFolder.disabled = true;
@@ -72,7 +111,11 @@ export function createControllerUI(paneDiv, workerName) {
         tab,
         executionPage,
         loadEqBtn,
+        loadEqBtnSim,
+        loadDataBtnSim,
         statusTextEq,
+        uiState,
+        uiStateTraj,
         loadDataBtn,
         statusTextState,
         execFolder,
