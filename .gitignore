@@ -1,3 +1,5 @@
 node_modules/
 dist/
 dependency-graph.svg
+HighRes.json
+LowRes.json
