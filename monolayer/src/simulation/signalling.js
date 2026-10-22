@@ -108,7 +108,10 @@ export const updateSignallingCircuit = (currentBacteria, HEIGHT, WIDTH, dx, dura
 	for (let i = 0; i < numberOfIterations; i++) {
 		clearConcentrationSources();
 
-		// First Strang half-step: reactions + couple sources/sinks to grid
+		// First Strang half-step: reactions + couple sources/sinks to grid.
+		// Every source and sink written to the grid is checked for NaN/Inf there,
+		// and every grid value a cell reads back is checked in the next half-step,
+		// so no scan of the whole grid is needed.
 		reactionHalfStepWithCoupling(positionMap, timeLapse / 2, concentrationsState, dx, state);
 
 		// Diffusion (grid-only, no per-bacterium state)

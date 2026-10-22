@@ -20,11 +20,12 @@ const setSpeciesNames = (names) => { speciesNames = names; };
 const setSecretedSpecies = (species) => { secretedSpecies = species; };
 
 export const setModel = (params, vars, config, bacteriaData, lineageMap) => {
-    if (Object.keys(parameters).length === 0 || Object.keys(variables).length === 0){
-        Object.assign(parameters, params);
-        Object.assign(variables, vars);
-    }
-    
+    // Always start from a clean state, so that loading a new equations file (or
+    // re-initialising with changed parameters) replaces the previous model.
+    resetModel();
+    Object.assign(parameters, params);
+    Object.assign(variables, vars);
+
     const speciesNamesLocal = Object.keys(variables.int);
     const secretedSpeciesLocal = Object.keys(variables.ext);
     
@@ -36,7 +37,6 @@ export const setModel = (params, vars, config, bacteriaData, lineageMap) => {
 
     initializeSpecies(variables.int, intSpeciesNames, interiorManager, false, gridSize);
     initializeSpecies(variables.ext, extSpeciesNames, exteriorManager, true, gridSize);
-    lockObjects([interiorManager, exteriorManager, concentrationsState, variables, parameters]);
     setCytopManager(bacteriaData,lineageMap);
 
 
@@ -66,13 +66,6 @@ speciesNames.forEach((speciesName) => {
     }
 });
 
-}
-
-function lockObjects(objectArray) {
-    objectArray.forEach(obj => {
-        Object.seal(obj); 
-        Object.preventExtensions(obj);
-    });
 }
 
 const setCytopManager = (bacteriaData, lineageMap) => { 

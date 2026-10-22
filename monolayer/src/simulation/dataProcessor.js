@@ -82,7 +82,9 @@ function analyzeBacteriaLineage(bacteriaTimeSeries, bacteriaLineage) {
     let sum = 0;
     let count = 0;
     lifetimes.forEach((value) => {
-        sum += value[1] - value[0];
+        // a cell present from frame first to frame last (inclusive) lives
+        // last - first + 1 frames between its birth and its division
+        sum += value[1] - value[0] + 1;
         count++;
     });
     const averageLifetime = sum / count ;
