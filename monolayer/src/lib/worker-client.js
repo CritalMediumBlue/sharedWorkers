@@ -26,3 +26,29 @@ export function connectToWorker(topics, onMessage, name) {
 
     return { send }; 
 }
+
+/**
+ * Ask the simulation SharedWorker with the given name whether it is still unused.
+ * Connecting creates the worker if it does not exist yet; the probe connection is
+ * closed again once the answer has arrived.
+ *
+ * @param {string} name  Simulation (worker) name.
+ * @returns {Promise<{ fresh: boolean, seed: number }>}
+ */
+export function probeWorker(name) {
+    return new Promise((resolve) => {
+        const worker = new SharedWorker(
+            new URL('../simulation-worker.js', import.meta.url),
+            { type: 'module', name: name },
+        );
+        const port = worker.port;
+        port.onmessage = (event) => {
+            if (event.data.type !== 'state:hello') return;
+            port.postMessage({ type: 'command:disconnect' });
+            port.close();
+            resolve(event.data.data);
+        };
+        port.start();
+        port.postMessage({ type: 'command:hello' });
+    });
+}

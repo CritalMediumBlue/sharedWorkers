@@ -81,6 +81,13 @@ executionPage.addBlade({ view: 'separator' });
     const execFolder = executionPage.addFolder({ title: 'Manage Simulation' });
     execFolder.disabled = true;
    
+    // Seed of the random draws in the equations file (e.g. initial producer flags);
+    // used at Initialize and Reset, so a run is reproducible from its seed.
+    const seedState = { seed: 0 };
+    const seedBinding = execFolder.addBinding(seedState, 'seed', {
+        label: 'Seed', step: 1, min: 0, max: 4294967295, format: (v) => String(Math.round(v)),
+    });
+    const newSeedBtn = execFolder.addButton({ title: '🎲', label: 'New seed' });
     const initBtn = execFolder.addButton({ title: '🚀', label: 'Initialize' });
     const playBtn = execFolder.addButton({ title: '▶/⏸', label: 'Run / Pause' });
     const resetBtn = execFolder.addButton({ title: '↺', label: 'Reset' });
@@ -144,5 +151,8 @@ executionPage.addBlade({ view: 'separator' });
         dataCollectFolder,
         physicsToggle,
         physicsState,
+        seedState,
+        seedBinding,
+        newSeedBtn,
     };
 }

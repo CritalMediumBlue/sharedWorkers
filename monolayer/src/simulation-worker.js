@@ -8,7 +8,8 @@
 
 import { createBacteriumSystem, updateSimulation, setParamFromGUI, getGlobalSpeciesConcentrations } from './simulation/simulationManager.js';
 import { createStates, createHistories, createConstants, updateHistories, getHistories, resetHistories } from './simulation/stateManager.js';
-import { processFileData } from './simulation/dataProcessor.js';
+import { frameCells, frameCount } from './simulation/trajectories.js';
+import { createSeededMath, evaluateEquations, randomSeed } from './simulation/equations.js';
 import * as physicsManager from './simulation/physics/physicsManager.js';
 import { CONFIG } from './config.js';
 
@@ -30,7 +31,7 @@ function publish(topic, payload) {
 // ─── Simulation state ───────────────────────────────────────────────────────
 let session = null;
 let constants = null;
-let bacteriaTimeSeries = null;
+let trajectories = null;   // packed frames (trajectories.js), sent by the controller page
 let histories = null;
 let bacteriaDataUpdated = null;
 let concentrations = null;
@@ -44,6 +45,11 @@ let stepCount = 0;
 let savingState = true;
 let freq = 40; // Save every N steps when savingState is true
 let physicsMode = false;
+
+// Seeded Math for the equations file: every init/reset restarts the random
+// sequence from `seed`, so a simulation is reproducible from its seed.
+let seed = randomSeed();
+const seededMath = createSeededMath(seed);
 
 // Hardcoded single-capsule defaults for the physics path
 const PHYSICS_CAPSULE_CONFIG = {
@@ -88,23 +94,23 @@ function buildInitPayload() {
 
 // ─── Simulation lifecycle ───────────────────────────────────────────────────
 
-function init(processedData) {
+function init(packedTrajectories) {
     stopLoop();
 
-    bacteriaTimeSeries = processedData.bacteriaTimeSeries;
+    trajectories = packedTrajectories;
     ({ session } = createStates());
+    seededMath.reseed(seed);
 
     createBacteriumSystem(
         CONFIG, previusVars, previusParams,
-        bacteriaTimeSeries[session.currentTimeStep],
-        processedData.bacteriaLineage,
+        frameCells(trajectories, session.currentTimeStep),
+        trajectories.lineage,
     );
 
     constants = createConstants();
     createHistories(Object.keys(previusVars.int).length);
-    storedProcessedData = processedData;
-    constants.numberOfTimeSteps = bacteriaTimeSeries.length;
-    constants.fromStepToMinutes = constants.doublingTime / processedData.averageLifetime;
+    constants.numberOfTimeSteps = frameCount(trajectories);
+    constants.fromStepToMinutes = constants.doublingTime / trajectories.averageLifetime;
     Object.freeze(constants);
 
     resetHistories();
@@ -125,6 +131,7 @@ async function initPhysics() {
     const lineageMap = { [PHYSICS_CAPSULE_CONFIG.id]: 0 };
 
     ({ session } = createStates());
+    seededMath.reseed(seed);
 
     createBacteriumSystem(CONFIG, previusVars, previusParams, seedBacteria, lineageMap);
 
@@ -152,8 +159,8 @@ function singleStep() {
         physicsManager.step(PHYSICS_DT);
         currentBacteria = physicsManager.getBacteriaSnapshot();
     } else {
-        if (!bacteriaTimeSeries) return;
-        currentBacteria = bacteriaTimeSeries[session.currentTimeStep];
+        if (!trajectories) return;
+        currentBacteria = frameCells(trajectories, session.currentTimeStep);
     }
 
     ({ bacteriaDataUpdated, concentrations } =
@@ -189,7 +196,7 @@ function publishAllState() {
     if (selectedSpecies && concentrations?.[selectedSpecies]) {
         publish('state:concentrations', {
             species: selectedSpecies,
-            conc: Array.from(concentrations[selectedSpecies].conc),
+            conc: concentrations[selectedSpecies].conc.slice(),   // typed-array copy: cheap to post
         });
     }
 
@@ -214,7 +221,7 @@ function tick() {
         if (selectedSpecies && concentrations?.[selectedSpecies]) {
             publish('state:concentrations', {
                 species: selectedSpecies,
-                conc: Array.from(concentrations[selectedSpecies].conc),
+                conc: concentrations[selectedSpecies].conc.slice(),   // typed-array copy: cheap to post
             });
         }
 
@@ -271,18 +278,26 @@ self.onconnect = (e) => {
                 (data.topics || []).forEach(t => topics.delete(t));
                 break;
 
+            // ── Identity: is this worker still unused? ──
+            case 'command:hello':
+                port.postMessage({
+                    type: 'state:hello',
+                    data: { fresh: previusVars === null && session === null, seed },
+                });
+                break;
+
+            case 'command:disconnect':
+                portSubscriptions.delete(port);
+                break;
+
             // ── File loading ──
             case 'command:loadEquations': {
-                const _window = {};
                 try {
-                    const fn = new Function('window', data.text);
-                    fn(_window);
+                    ({ vars: previusVars, params: previusParams } = evaluateEquations(data.text, seededMath.math));
                 } catch (err) {
                     port.postMessage({ type: 'error', data: { message: `Equations eval failed: ${err.message}` } });
                     break;
                 }
-                previusVars  = _window.vars;
-                previusParams = _window.params;
 
                 // Assign default visible colours
                 Object.keys(previusVars.int).forEach((name, i) => {
@@ -302,22 +317,22 @@ self.onconnect = (e) => {
                 break;
             }
 
-            case 'command:loadData': {
-                try {
-                    storedProcessedData = processFileData(data.text, data.filename);
-                } catch (err) {
-                    port.postMessage({ type: 'error', data: { message: `Data parse failed: ${err.message}` } });
-                    break;
-                }
+            // Trajectories parsed and packed once by the controller page (trajectories.js),
+            // so that every simulation holds only the compact typed arrays
+            case 'command:loadTrajectories': {
+                storedProcessedData = data.trajectories;
                 port.postMessage({
                     type: 'data:loaded',
-                    data: { timeSteps: storedProcessedData.bacteriaTimeSeries.length,
-                        fileTitle: storedProcessedData.fileTitle },
+                    data: { timeSteps: frameCount(storedProcessedData), fileTitle: storedProcessedData.fileTitle },
                 });
                 break;
             }
 
             // ── Simulation commands ──
+            case 'command:setSeed':
+                seed = data.seed >>> 0;
+                break;
+
             case 'command:setPhysicsMode':
                 physicsMode = !!data.enabled;
                 break;
@@ -357,7 +372,7 @@ self.onconnect = (e) => {
                 break;
 
             case 'command:stepForward':
-                if (session && (physicsMode || bacteriaTimeSeries)) {
+                if (session && (physicsMode || trajectories)) {
                     session.play = false;
                     singleStep();
                     publishAllState();
@@ -374,7 +389,7 @@ self.onconnect = (e) => {
                 //trigger rendering of new selected species by republishing current state
                 publish('state:concentrations', {
                     species: selectedSpecies,
-                    conc: Array.from(concentrations?.[selectedSpecies]?.conc || []),
+                    conc: concentrations?.[selectedSpecies]?.conc?.slice() ?? new Float64Array(0),
                 });
                 break;
 
