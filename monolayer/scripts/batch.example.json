@@ -1,0 +1,24 @@
+{
+    "equations": "/path/to/EncryptedThesis/ODE/sender-receiver.js",
+    "data": "/path/to/trajectories.json",
+    "outDir": "../batch-output",
+    "frames": {
+        "start": 1,
+        "end": 400
+    },
+    "saveEvery": 40,
+    "saveFrom": 200,
+    "params": {},
+    "sweep": {
+        "K": [
+            350,
+            750
+        ]
+    },
+    "seeds": [
+        1,
+        2,
+        3
+    ],
+    "maxParallel": 4
+}
