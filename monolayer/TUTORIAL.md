@@ -260,6 +260,7 @@ simulate, the parameter sweep and the seeds. Save this as
 | `saveEvery` | Save every n-th frame (and always the last one). Default 40. |
 | `saveFrom` | Save frames only from this frame on. The frames before are still simulated — the system needs them to reach steady state — but not saved, so the heatmaps leave out the transient. All concentrations start at 1, and the reporter settles with a time constant of about 65 min (≈37 frames), so it is within about 5 % of steady state after ≈110 frames (≈3 h); 120–200 is a good value. Default: save from the first frame. |
 | `params` | Parameter values that replace those of the equations file in **all** runs. Optional. |
+| | Besides the parameters of the equations file, `params` (and `sweep`) accept the engine setting `DIFFUSION_STEADY_TOLERANCE`: once the extracellular field changes by less than this fraction of its maximum in one ODE step, and its sources and sinks stay the same, the diffusion is skipped until they change (usually at the next frame, when the cells move). Default `1e-6`, which reproduces the step-by-step diffusion to about 10⁻⁵ and makes runs about 1.4× faster; `0` diffuses at every step. It can also be set in an equations file. |
 | `sweep` | Parameters to vary. Every combination of the listed values is run: `{ "K": [350, 750], "P_R": [0.1, 0.2] }` gives 4 combinations. Optional. |
 | `seeds` | A list of seeds (one replicate per seed), or a number n for n random seeds. Default 1 random seed. |
 | `maxParallel` | How many runs at the same time. Default: half the number of hardware threads, i.e. about one per physical core (6 on a 6-core/12-thread machine); more parallel runs add almost no speed. |
@@ -387,7 +388,7 @@ run has the right curve.
 | Only the first saved state is downloaded | Chrome blocked the further downloads: click the blocked-download icon in the address bar and allow multiple downloads for `localhost`. |
 | A save dialog opens for every file | Turn off "Ask where to save each file before downloading" in Chrome's download settings. |
 | `The equations file must define params.TIME_SCALE_SECONDS` (batch) | Old equations files lack this parameter; use the files tangled from the thesis (`EncryptedThesis/ODE/`). |
-| `Unknown parameter(s) in the run configuration: …` (batch) | A name in `params` or `sweep` does not exist in the equations file (names are case-sensitive). |
+| `Unknown parameter(s) in the run configuration: …` (batch) | A name in `params` or `sweep` does not exist in the equations file and is not an engine setting such as `DIFFUSION_STEADY_TOLERANCE` (names are case-sensitive). |
 | `JavaScript heap out of memory` (batch) | The runner holds the parsed trajectory data in memory once (the npm script allows 8 GB). Lower `maxParallel` or use a smaller data file. |
 | `🛑 FIRST NaN/Inf DETECTED` in the browser console or the terminal | A concentration became NaN or infinite; the message names the stage, species, cell and parameters where it happened. Check the parameter values of that run. |
 | `npm audit fix` fails with `Cannot read properties of null (reading 'edgesOut')` | A bug of npm 10 with the Vitest packages, not a problem of the project; `npm install` is not affected and is all the tutorial needs. To apply audit fixes, use a newer npm without installing it: `npx -y npm@12 audit fix`. |

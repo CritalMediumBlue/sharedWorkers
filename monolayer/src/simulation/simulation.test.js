@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { setModel, parameters, intEquations, interiorManager } from './intracellular/cytoplasmState.js';
 import * as cytoplasmState from './intracellular/cytoplasmState.js';
 import { reactionHalfStep } from './intracellular/cytoplasmUpdater.js';
+import * as signalling from './signalling.js';
 import { createSeededMath, evaluateEquations } from './equations.js';
 import { packTrajectories, frameCells, frameCount } from './trajectories.js';
 
@@ -53,6 +54,42 @@ describe('RK4 reaction step', () => {
         const rk4 = (1 + z + z ** 2 / 2 + z ** 3 / 6 + z ** 4 / 24) ** 10;
         expect(interiorManager.G.get(1)).toBeCloseTo(rk4, 12);
         expect(interiorManager.G.get(1)).toBeCloseTo(Math.exp(-rate * h * 10), 4);
+    });
+});
+
+describe('diffusion at steady state', () => {
+    // A sender and a receiver (both absorbing) on a 20 x 12 grid; constant sources and sinks
+    const grid = { GRID: { WIDTH: 20, HEIGHT: 12, dx: 0.5 } };
+    const cells = [{ id: 1, x: 1, y: 0, angle: 0, longAxis: 2 }, { id: 2, x: -1.5, y: 1, angle: 0, longAxis: 2 }];
+    const model = (tolerance) => {
+        let cell = 0;
+        return {
+            params: { Kin: 30.6, Kout: 2.2, DiffusionRate: 40, ODE_TIME_STEP: 1, ADI_TIME_STEP: 0.2,
+                      DIFFUSION_STEADY_TOLERANCE: tolerance },
+            vars: {
+                int: { sender: { val: () => (cell++ === 0 ? 1 : 0), eq: () => 0 } },
+                ext: { S: { val: () => 0, eq: (vars, params) => params.Kout * vars.int.sender.val } },
+            },
+        };
+    };
+    const run = (tolerance, seconds = 60) => {
+        const { params, vars } = model(tolerance);
+        signalling.setModel(params, vars, grid, cells, { 1: 0, 2: 0 });
+        const { concentrations } = signalling.updateSignallingCircuit(cells, 12, 20, 0.5, seconds);
+        return Float64Array.from(concentrations.S.conc);
+    };
+    const maxRelativeDifference = (a, b) =>
+        Math.max(...a.map((v, i) => Math.abs(v - b[i]))) / Math.max(...b.map(Math.abs));
+
+    it('gives the same field as diffusing at every step', () => {
+        expect(maxRelativeDifference(run(1e-6), run(0))).toBeLessThan(1e-5);
+    });
+
+    it('recomputes the field when a parameter changes', () => {
+        const before = run(1e-6);
+        signalling.setParameter('DiffusionRate', 10);
+        const { concentrations } = signalling.updateSignallingCircuit(cells, 12, 20, 0.5, 60);
+        expect(maxRelativeDifference(Float64Array.from(concentrations.S.conc), before)).toBeGreaterThan(1e-3);
     });
 });
 

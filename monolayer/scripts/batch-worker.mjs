@@ -23,7 +23,10 @@ const frame = (f) => frameCells(trajectories, f);
 
 const seeded = createSeededMath(run.seed);
 const { vars, params } = evaluateEquations(equationsText, seeded.math);
-const unknown = Object.keys(run.overrides).filter((name) => !(name in params));
+// Engine settings with defaults in the engine, valid even when the equations file
+// does not define them
+const ENGINE_PARAMS = ['DIFFUSION_STEADY_TOLERANCE'];
+const unknown = Object.keys(run.overrides).filter((name) => !(name in params) && !ENGINE_PARAMS.includes(name));
 if (unknown.length) throw new Error(`Unknown parameter(s) in the run configuration: ${unknown.join(', ')}`);
 Object.assign(params, run.overrides);
 if (!Number.isFinite(params.TIME_SCALE_SECONDS)) {
