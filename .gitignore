@@ -3,3 +3,4 @@ dist/
 dependency-graph.svg
 HighRes.json
 LowRes.json
+.aider*

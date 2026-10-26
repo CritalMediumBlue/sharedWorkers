@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>tutorial</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="TUTORIAL_files/libs/clipboard/clipboard.min.js"></script>
+<script src="TUTORIAL_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="TUTORIAL_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="TUTORIAL_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="TUTORIAL_files/libs/quarto-html/popper.min.js"></script>
+<script src="TUTORIAL_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="TUTORIAL_files/libs/quarto-html/anchor.min.js"></script>
+<link href="TUTORIAL_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="TUTORIAL_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="TUTORIAL_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="TUTORIAL_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="TUTORIAL_files/libs/bootstrap/bootstrap-433350e58c39ee097c4dc605c632e682.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="tutorial-running-several-simulations-in-parallel-and-making-heatmaps" class="level1">
+<h1>Tutorial: running several simulations in parallel and making heatmaps</h1>
+<p>This tutorial shows two ways to run several monolayer simulations at the same time and how to turn their output into heatmaps with the thesis script <code>scripts/heatmap.py</code>:</p>
+<ul>
+<li><strong>In the browser</strong> (Part A): you watch the simulations while they run, and the browser downloads their states as JSON files.</li>
+<li><strong>Headless, from the terminal</strong> (Part B): <code>npm run batch</code> runs a whole parameter sweep with replicates, without a browser, and writes everything to a folder.</li>
+</ul>
+<p>Use the browser to explore and to look at a few runs; use the batch runner to produce data: it is reproducible, faster to set up for many runs, and it records how every run was made.</p>
+<p>The examples use these paths, adjust them to your machine:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>What</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Engine</td>
+<td><code>~/Desktop/Repos/sharedWorkers/monolayer</code></td>
+</tr>
+<tr class="even">
+<td>Equations files (tangled from the thesis)</td>
+<td><code>~/Desktop/Repos/EncryptedThesis/ODE/</code></td>
+</tr>
+<tr class="odd">
+<td>Trajectory data</td>
+<td><code>~/Desktop/Repos/DataParser/CompressedStates/LowRes.json</code></td>
+</tr>
+<tr class="even">
+<td>Heatmap script and its Python</td>
+<td><code>~/Desktop/Repos/EncryptedThesis/scripts/heatmap.py</code>, <code>~/Desktop/Repos/EncryptedThesis/.venv/bin/python</code></td>
+</tr>
+<tr class="odd">
+<td>Working folder for results (any folder outside the repositories)</td>
+<td><code>~/Desktop/simulation-runs/</code></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<section id="before-you-start" class="level2">
+<h2 class="anchored" data-anchor-id="before-you-start">0. Before you start</h2>
+<ol type="1">
+<li><p>The features of this tutorial are on the branch <code>simulation-runs</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Desktop/Repos/sharedWorkers</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> switch simulation-runs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Install the engine’s dependencies (once):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Desktop/Repos/sharedWorkers/monolayer</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>The equations files in <code>EncryptedThesis/ODE/</code> are generated from the thesis chapters. If the folder is empty or outdated, regenerate them:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Desktop/Repos/EncryptedThesis</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/entangled</span> tangle</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>For the sender–receiver circuit use <code>ODE/sender-receiver.js</code>, for quorum sensing <code>ODE/quorum-sensing.js</code>.</p></li>
+<li><p>Create the working folder for the results:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/Desktop/simulation-runs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+</ol>
+<hr>
+</section>
+<section id="concepts" class="level2">
+<h2 class="anchored" data-anchor-id="concepts">1. Concepts</h2>
+<ul>
+<li><strong>A simulation is a named worker.</strong> Every simulation runs in its own background thread (a SharedWorker) and is identified by its name, e.g.&nbsp;<code>1</code>, <code>2</code>, <code>K350-a</code>. Several simulations therefore really run in parallel, one per CPU core. Names are unique: the controller does not let you create two simulations with the same name.</li>
+<li><strong>The seed</strong> fixes the random choices in the equations file, above all which cells start as producers and which as receivers. The same seed with the same files and parameters gives exactly the same run. <em>Initialize</em> and <em>Reset</em> always restart from the seed shown in the pane.</li>
+<li><strong>A clone is a replicate.</strong> <em>Clone Simulation</em> creates a new simulation with the same equations, trajectory data, parameter values (including the ones you changed with the sliders), settings and bacteria colours (tab <em>Visualization</em>), but a <strong>new seed</strong>, i.e.&nbsp;a new random producer/receiver labelling. Change the clone’s parameters if you want a parameter variant instead of a replicate.</li>
+<li><strong>What is saved.</strong> Every saved state is one JSON file with all cells of one frame: position, cell type and all intracellular and extracellular concentrations. <code>heatmap.py</code> reads any number of such files — e.g.&nbsp;all downloads of several simulations — treats every file as one frame, and pools them into one heatmap per decay length.</li>
+</ul>
+<hr>
+</section>
+<section id="part-a-several-simulations-in-the-browser" class="level2">
+<h2 class="anchored" data-anchor-id="part-a-several-simulations-in-the-browser">Part A — Several simulations in the browser</h2>
+<section id="a1.-start-the-engine" class="level3">
+<h3 class="anchored" data-anchor-id="a1.-start-the-engine">A1. Start the engine</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Desktop/Repos/sharedWorkers/monolayer</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run dev</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Vite prints an address, usually <code>http://localhost:5173/</code>. Open it in <strong>Chrome</strong> (SharedWorkers are needed). This page is the <strong>controller</strong>. Firefox works as well, but in our benchmark Chrome ran the simulations about 10–25 % faster and used less memory, so Chrome is recommended. In Firefox, the download setting below is <em>Settings → General → Downloads → “Always ask you where to save files”</em>.</p>
+<p>Chrome downloads every saved state as a separate file. Prepare Chrome once:</p>
+<ul>
+<li>In <em>Settings → Downloads</em>, turn <strong>off</strong> “Ask where to save each file before downloading”, otherwise Chrome opens a dialog for every saved state.</li>
+<li>The first time the page saves several files, Chrome asks whether <code>localhost</code> may <em>download multiple files</em>: click <strong>Allow</strong>.</li>
+</ul>
+</section>
+<section id="a2.-create-the-first-simulation" class="level3">
+<h3 class="anchored" data-anchor-id="a2.-create-the-first-simulation">A2. Create the first simulation</h3>
+<ol type="1">
+<li>The page asks for a name; accept <code>1</code> or type your own.</li>
+<li>In the pane <em>Simulation 1</em>, tab <strong>Execution</strong>, folder <em>Simulate from Precomputed Trajectories</em>:
+<ul>
+<li><strong>Load equations file</strong> → <code>EncryptedThesis/ODE/sender-receiver.js</code></li>
+<li><strong>Load trajectory data</strong> → <code>DataParser/CompressedStates/LowRes.json</code> (the page is busy for about 3 s while it reads and packs the file; this happens only once, clones reuse the packed data).</li>
+</ul></li>
+<li>Optional, tab <strong>Parameters</strong>: change parameter values with the sliders.</li>
+<li>Folder <em>Data Collection</em>: the <strong>Saving frequency</strong> slider sets how many frames pass between two saved states (default 40). Saving is on by default; <em>Stop Saving</em> / <em>Start Saving</em> switch it off and on. Smaller values give more frames for the heatmaps, and more files.</li>
+<li>Folder <em>Manage Simulation</em>: the <strong>Seed</strong> field shows this simulation’s seed. Type a number to choose it, or press <strong>🎲 New seed</strong> for a random one. Write down the seed if you want to reproduce the run later (it is also part of every saved file’s name, see A5).</li>
+<li>Press <strong>🚀 Initialize</strong>. The simulation starts running immediately. <em>Run / Pause</em> pauses and resumes it, <em>Step Forward</em> advances one frame, <em>Reset</em> restarts it from the first frame with the same seed.</li>
+</ol>
+</section>
+<section id="a3.-add-more-simulations-running-in-parallel" class="level3">
+<h3 class="anchored" data-anchor-id="a3.-add-more-simulations-running-in-parallel">A3. Add more simulations running in parallel</h3>
+<p><strong>Replicates (same parameters, different random labelling):</strong> in the pane of simulation 1, press <strong>⎘ Clone Simulation</strong>, accept the suggested name (<code>2</code>). A new pane appears with the same files, parameter values and bacteria colours, and a new seed. Press <strong>Initialize</strong> in the new pane. Repeat for more replicates.</p>
+<p><strong>Parameter variants:</strong> clone as above, then, in the clone’s <strong>Parameters</strong> tab, change the value (e.g.&nbsp;<code>K</code>), and press <strong>Initialize</strong>. Give such clones names that say what they are, e.g.&nbsp;<code>K350</code> and <code>K750</code>.</p>
+<p><strong>Completely different setups:</strong> a clone always starts from the files of its source. To load other files, load them in the clone’s pane before pressing Initialize (loading a new equations file resets the parameter sliders to the file’s values).</p>
+<p>How many simulations to run at once: each one keeps one physical CPU core busy. The browser counts hardware threads, usually two per physical core, and a simulation gains little from the second thread of a core. On this machine (6 cores, 12 threads) 5 simulations run at about 1 frame/s each, 11 at only about 0.55 frames/s each: about 6 frames/s in total either way. When a page already runs half as many simulations as the browser reports threads (6 here), it asks for confirmation before creating another one. Each simulation keeps its own copy of the packed trajectory data (about 0.17 GB for LowRes.json); all simulations of a tab share Chrome’s ≈4 GB JavaScript memory, which in principle leaves room for about 20 (tested with up to 11). For more runs, or to use all cores without a browser, use the batch runner (Part B).</p>
+</section>
+<section id="a4.-watch-the-simulations" class="level3">
+<h3 class="anchored" data-anchor-id="a4.-watch-the-simulations">A4. Watch the simulations</h3>
+<p>In a simulation’s pane, tab <strong>Dashboards</strong>, open the <em>3D Scene</em>, <em>Plot</em>, <em>Monitor</em> and <em>Phase Portrait</em> windows. Every simulation gets its own windows, so you can place the 3D scenes of two simulations side by side.</p>
+<p>Keep the controller tab open: closing it stops all simulations it created.</p>
+<p><strong>Attaching from another window.</strong> If you open the controller address in a second tab and type the name of a simulation that is already running, the page asks whether to <em>attach</em> to it. Attaching gives you a second set of controls for the same simulation, e.g.&nbsp;on a second screen; closing that tab does not stop the simulation. To create a new simulation instead, choose another name.</p>
+</section>
+<section id="a5.-collect-the-saved-states" class="level3">
+<h3 class="anchored" data-anchor-id="a5.-collect-the-saved-states">A5. Collect the saved states</h3>
+<p>The files arrive in your Downloads folder, named</p>
+<pre><code>&lt;simulation name&gt;_seed-&lt;seed&gt;_bacteria_state_&lt;date and time&gt;.json</code></pre>
+<p>e.g.&nbsp;<code>2_seed-1832746551_bacteria_state_2026-10-22T15-02-11-123Z.json</code>. Each file is one frame of one simulation. There is nothing to sort: <code>heatmap.py</code> reads the files directly from the download folder, all of them or only those of the simulations you choose (A6). If Chrome saves downloads somewhere else (its <em>Settings → Downloads → Location</em>), use that folder instead of <code>~/Downloads</code> below.</p>
+</section>
+<section id="a6.-make-the-heatmaps-of-the-browser-runs" class="level3">
+<h3 class="anchored" data-anchor-id="a6.-make-the-heatmaps-of-the-browser-runs">A6. Make the heatmaps of the browser runs</h3>
+<p><code>heatmap.py</code> accepts any number of files and folders and pools all of them into <strong>one heatmap per decay length</strong> (λ = 2.0, 2.5, 3.0, 3.5 µm). Every file stays a frame of its own, so cells of different simulations are never counted as neighbours. <code>--out</code> chooses the folder for the heatmaps.</p>
+<p><strong>All simulations together:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="va">PY</span><span class="op">=</span>~/Desktop/Repos/EncryptedThesis/.venv/bin/python</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="va">HEATMAP</span><span class="op">=</span>~/Desktop/Repos/EncryptedThesis/scripts/heatmap.py</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="st">"</span><span class="va">$PY</span><span class="st">"</span> <span class="st">"</span><span class="va">$HEATMAP</span><span class="st">"</span> ~/Downloads/<span class="pp">*</span>_bacteria_state_<span class="pp">*</span>.json <span class="dt">\</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">--overlay</span> sender-receiver <span class="at">--out</span> ~/Desktop/simulation-runs/heatmaps-all</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Only some simulations</strong>, selected by the name at the start of the file names (the <code>_</code> after the name keeps <code>2</code> from also matching <code>21</code>):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># simulation 2 alone</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="st">"</span><span class="va">$PY</span><span class="st">"</span> <span class="st">"</span><span class="va">$HEATMAP</span><span class="st">"</span> ~/Downloads/2_seed-<span class="pp">*</span>_bacteria_state_<span class="pp">*</span>.json <span class="dt">\</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--overlay</span> sender-receiver <span class="at">--out</span> ~/Desktop/simulation-runs/heatmaps-sim2</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># simulations 1, 2 and 3</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">"</span><span class="va">$PY</span><span class="st">"</span> <span class="st">"</span><span class="va">$HEATMAP</span><span class="st">"</span> ~/Downloads/<span class="dt">{1</span><span class="op">,</span><span class="dt">2</span><span class="op">,</span><span class="dt">3}</span>_seed-<span class="pp">*</span>_bacteria_state_<span class="pp">*</span>.json <span class="dt">\</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">--overlay</span> sender-receiver <span class="at">--out</span> ~/Desktop/simulation-runs/heatmaps-1-3</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The script prints how many frames and cells it read, the intensity range, and the name of each heatmap it writes: <code>heatmap_fluorescence_vs_local_proportion(rfp, Lambda=….png</code>.</p>
+<p>Pool only simulations of the same model and parameters (e.g.&nbsp;replicates made with <em>Clone Simulation</em>): the heatmap cannot tell a parameter variant from a replicate. Give parameter variants their own names (e.g.&nbsp;<code>K350</code>, <code>K750</code>) and select them by name as above. See <em>Heatmap options</em> below for the other flags, e.g.&nbsp;<code>--scale 750</code> for the nondimensional equations files.</p>
+<hr>
+</section>
+</section>
+<section id="part-b-a-batch-of-simulations-in-the-terminal-headless" class="level2">
+<h2 class="anchored" data-anchor-id="part-b-a-batch-of-simulations-in-the-terminal-headless">Part B — A batch of simulations in the terminal (headless)</h2>
+<section id="b1.-write-a-configuration-file" class="level3">
+<h3 class="anchored" data-anchor-id="b1.-write-a-configuration-file">B1. Write a configuration file</h3>
+<p>A configuration describes all runs of a batch: the files, the frames to simulate, the parameter sweep and the seeds. Save this as <code>~/Desktop/simulation-runs/batch/K-sweep.json</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"equations"</span><span class="fu">:</span> <span class="st">"/home/ricardo/Desktop/Repos/EncryptedThesis/ODE/sender-receiver.js"</span><span class="fu">,</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"data"</span><span class="fu">:</span> <span class="st">"/home/ricardo/Desktop/Repos/DataParser/CompressedStates/LowRes.json"</span><span class="fu">,</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"outDir"</span><span class="fu">:</span> <span class="st">"K-sweep"</span><span class="fu">,</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"frames"</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">"start"</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span> <span class="dt">"end"</span><span class="fu">:</span> <span class="dv">400</span> <span class="fu">},</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"saveEvery"</span><span class="fu">:</span> <span class="dv">10</span><span class="fu">,</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"saveFrom"</span><span class="fu">:</span> <span class="dv">200</span><span class="fu">,</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"params"</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">"Kdeg"</span><span class="fu">:</span> <span class="fl">0.00166</span> <span class="fu">},</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"sweep"</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">"K"</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">350</span><span class="ot">,</span> <span class="dv">750</span><span class="ot">]</span> <span class="fu">},</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">"seeds"</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">1</span><span class="ot">,</span> <span class="dv">2</span><span class="ot">,</span> <span class="dv">3</span><span class="ot">]</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>equations</code>, <code>data</code></td>
+<td>The equations file and the trajectory data. Relative paths are relative to the configuration file.</td>
+</tr>
+<tr class="even">
+<td><code>outDir</code></td>
+<td>Folder for the results, relative to the configuration file. Default <code>batch-output</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>frames</code></td>
+<td>First frame and the frame after the last one: <code>{ "start": 1, "end": 400 }</code> simulates frames 1–399. Default: frame 1 to the end of the data (4014 frames for LowRes.json).</td>
+</tr>
+<tr class="even">
+<td><code>saveEvery</code></td>
+<td>Save every n-th frame (and always the last one). Default 40.</td>
+</tr>
+<tr class="odd">
+<td><code>saveFrom</code></td>
+<td>Save frames only from this frame on. The frames before are still simulated — the system needs them to reach steady state — but not saved, so the heatmaps leave out the transient. All concentrations start at 1, and the reporter settles with a time constant of about 65 min (≈37 frames), so it is within about 5 % of steady state after ≈110 frames (≈3 h); 120–200 is a good value. Default: save from the first frame.</td>
+</tr>
+<tr class="even">
+<td><code>params</code></td>
+<td>Parameter values that replace those of the equations file in <strong>all</strong> runs. Optional.</td>
+</tr>
+<tr class="odd">
+<td><code>sweep</code></td>
+<td>Parameters to vary. Every combination of the listed values is run: <code>{ "K": [350, 750], "P_R": [0.1, 0.2] }</code> gives 4 combinations. Optional.</td>
+</tr>
+<tr class="even">
+<td><code>seeds</code></td>
+<td>A list of seeds (one replicate per seed), or a number n for n random seeds. Default 1 random seed.</td>
+</tr>
+<tr class="odd">
+<td><code>maxParallel</code></td>
+<td>How many runs at the same time. Default: half the number of hardware threads, i.e.&nbsp;about one per physical core (6 on a 6-core/12-thread machine); more parallel runs add almost no speed.</td>
+</tr>
+</tbody>
+</table>
+<p>The example makes 2 values of <code>K</code> × 3 seeds = <strong>6 runs</strong>, all at the same time (the default allows 6 in parallel on this machine). Parameter names must exist in the equations file; a misspelled name stops the run with an error.</p>
+</section>
+<section id="b2.-run-the-batch" class="level3">
+<h3 class="anchored" data-anchor-id="b2.-run-the-batch">B2. Run the batch</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Desktop/Repos/sharedWorkers/monolayer</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run batch <span class="at">--</span> ~/Desktop/simulation-runs/batch/K-sweep.json</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The runner reads the trajectory data once (a few seconds for LowRes.json), then prints a line per saved frame and one per finished run:</p>
+<pre><code>Reading /home/ricardo/Desktop/Repos/DataParser/CompressedStates/LowRes.json …
+6 run(s) × 399 frames (101.6 s per frame), 6 in parallel → /home/ricardo/Desktop/simulation-runs/batch/K-sweep; saving from frame 200
+  K=350_seed=1: frame 200 (200/399)
+  …
+✓ K=350_seed=1 (560 s)
+…
+All runs finished.</code></pre>
+<p>On this machine each run takes about 1.1 s per frame (≈1000 cells) when it runs alone and about 1.4 s per frame with 6 runs in parallel, so the 6 runs of the example over frames 1–399 finish together after about 9 minutes, and a run over all 4014 frames takes about 1.5 hours. Try a configuration with <code>"end": 21</code> (and <code>"saveFrom": 10</code>, which must lie within the simulated frames) first to check everything in about half a minute.</p>
+</section>
+<section id="b3.-what-the-batch-writes" class="level3">
+<h3 class="anchored" data-anchor-id="b3.-what-the-batch-writes">B3. What the batch writes</h3>
+<pre><code>batch/K-sweep/
+├── K=350_seed=1/
+│   ├── run.json               ← how this run was made
+│   └── frames/
+│       ├── frame_000200.json  ← all cells of frame 200 (the first saved, saveFrom)
+│       ├── frame_000210.json
+│       └── …
+├── K=350_seed=2/
+├── …
+└── K=750_seed=3/</code></pre>
+<p><code>run.json</code> records everything needed to reproduce the run: the equations and data files, the full parameter set, the overrides of this run, the seed, the frames, the seconds per frame, and the git commit of the engine (marked <em>with uncommitted changes</em> if the engine had local modifications). Running the same configuration again gives byte-identical frames.</p>
+</section>
+<section id="b4.-make-the-heatmaps-of-the-batch" class="level3">
+<h3 class="anchored" data-anchor-id="b4.-make-the-heatmaps-of-the-batch">B4. Make the heatmaps of the batch</h3>
+<p>Pass the <code>frames</code> folders of the runs to pool; wildcards select them by run name. One heatmap per parameter value, pooling all its replicates (seeds):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/Desktop/simulation-runs/batch</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="va">PY</span><span class="op">=</span>~/Desktop/Repos/EncryptedThesis/.venv/bin/python</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="va">HEATMAP</span><span class="op">=</span>~/Desktop/Repos/EncryptedThesis/scripts/heatmap.py</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> K <span class="kw">in</span> 350 750<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"</span><span class="va">$PY</span><span class="st">"</span> <span class="st">"</span><span class="va">$HEATMAP</span><span class="st">"</span> K-sweep/K=<span class="va">${K}</span>_seed=<span class="pp">*</span>/frames <span class="dt">\</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">--overlay</span> sender-receiver <span class="at">--out</span> heatmaps/K=<span class="va">$K</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This writes <code>heatmaps/K=350/</code> and <code>heatmaps/K=750/</code>, each with one heatmap per decay length. A single run works the same way, e.g. <code>"$PY" "$HEATMAP" K-sweep/K=750_seed=1/frames --out heatmaps/K=750_seed=1</code>. Remember that the <code>sender-receiver</code> overlay is drawn for <code>K = 750</code> (see <em>Heatmap options</em>).</p>
+<hr>
+</section>
+</section>
+<section id="heatmap-options" class="level2">
+<h2 class="anchored" data-anchor-id="heatmap-options">Heatmap options</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="st">"</span><span class="va">$PY</span><span class="st">"</span> <span class="st">"</span><span class="va">$HEATMAP</span><span class="st">"</span> <span class="at">--help</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Argument / flag</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>files and folders</td>
+<td>The saved frames to pool: JSON files, folders of JSON files, or wildcards. Default: the current folder. JSON files that are not saved frames are skipped.</td>
+</tr>
+<tr class="even">
+<td><code>--out DIR</code></td>
+<td>Folder for the heatmaps (default <code>heatmaps</code> in the current folder).</td>
+</tr>
+<tr class="odd">
+<td><code>--overlay sender-receiver</code> / <code>quorum-sensing</code> / <code>sender-receiver-positive</code> / <code>none</code></td>
+<td>The predicted response drawn over the heatmap. <code>sender-receiver-positive</code> is for <code>ODE/sender-receiver-positive.js</code> (the switch): it draws the OFF and ON branches and, dashed, the unstable branch between them; both stable branches exist for local receiver proportions between ≈0.35 and 0.84.</td>
+</tr>
+<tr class="even">
+<td><code>--yscale log</code> / <code>linear</code></td>
+<td>Binning and axis of the fluorescence (default log).</td>
+</tr>
+<tr class="odd">
+<td><code>--scale</code>, <code>--offset</code></td>
+<td>Calibration to the experimental units: intensity = scale · value + offset (e.g.&nbsp;<code>--scale 4.15 --offset -100</code>).</td>
+</tr>
+<tr class="even">
+<td><code>--max-frames N</code></td>
+<td>Use only the first N files read (default: all).</td>
+</tr>
+</tbody>
+</table>
+<p>The decay lengths of the heatmaps are set by <code>DECAY_LENGTHS</code> at the top of the script (λ = 2.0, 2.5, 3.0, 3.5 µm); all of them are computed in one pass over the frames.</p>
+<p><strong>Nondimensional equations files</strong> (<code>ODE/*-nd.js</code>, e.g. <code>monotonic-decreasing-nd.js</code>) measure concentrations in units of the Hill constant <code>K</code>, so their reporter values are 750 times smaller than those of <code>sender-receiver.js</code> (about 0.06–0.6 instead of 47–460 molec/µm²). Add <code>--scale 750</code> (<code>--scale 350</code> for the quorum-sensing files) to convert them to molec/µm²; then the overlay curve lies on the data. You can tell the files apart by the species: the reduced nondimensional model has no complex <code>C</code>.</p>
+<p>The overlays use the Hill constant of the thesis’ canonical circuits: <code>K = 750</code> for <code>sender-receiver</code>, <code>K = 350</code> for <code>quorum-sensing</code> and <code>K = 65</code> for <code>sender-receiver-positive</code>. For runs with another <code>K</code> (as in the K-sweep), the drawn curve does not correspond to the simulated <code>K</code>; use <code>--overlay none</code> for those runs or keep in mind that only the matching run has the right curve.</p>
+<hr>
+</section>
+<section id="troubleshooting" class="level2">
+<h2 class="anchored" data-anchor-id="troubleshooting">Troubleshooting</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>“A simulation named … already exists in this window.”</td>
+<td>Names are unique per controller; take the suggested name.</td>
+</tr>
+<tr class="even">
+<td>“A simulation named … is already running in another window. Attach to it?”</td>
+<td>Another tab runs a simulation with this name. <em>OK</em> attaches to it; <em>Cancel</em> lets you choose another name.</td>
+</tr>
+<tr class="odd">
+<td>The tab freezes and no simulation advances</td>
+<td>All simulations of a tab share Chrome’s ≈4 GB of JavaScript memory; with very large trajectory files or very many simulations it runs out (the browser console or Chrome’s log shows <code>V8 javascript OOM</code>). Close the tab, reopen it and run fewer simulations, or use the batch runner.</td>
+</tr>
+<tr class="even">
+<td>Only the first saved state is downloaded</td>
+<td>Chrome blocked the further downloads: click the blocked-download icon in the address bar and allow multiple downloads for <code>localhost</code>.</td>
+</tr>
+<tr class="odd">
+<td>A save dialog opens for every file</td>
+<td>Turn off “Ask where to save each file before downloading” in Chrome’s download settings.</td>
+</tr>
+<tr class="even">
+<td><code>The equations file must define params.TIME_SCALE_SECONDS</code> (batch)</td>
+<td>Old equations files lack this parameter; use the files tangled from the thesis (<code>EncryptedThesis/ODE/</code>).</td>
+</tr>
+<tr class="odd">
+<td><code>Unknown parameter(s) in the run configuration: …</code> (batch)</td>
+<td>A name in <code>params</code> or <code>sweep</code> does not exist in the equations file (names are case-sensitive).</td>
+</tr>
+<tr class="even">
+<td><code>JavaScript heap out of memory</code> (batch)</td>
+<td>The runner holds the parsed trajectory data in memory once (the npm script allows 8 GB). Lower <code>maxParallel</code> or use a smaller data file.</td>
+</tr>
+<tr class="odd">
+<td><code>🛑 FIRST NaN/Inf DETECTED</code> in the browser console or the terminal</td>
+<td>A concentration became NaN or infinite; the message names the stage, species, cell and parameters where it happened. Check the parameter values of that run.</td>
+</tr>
+<tr class="even">
+<td><code>npm audit fix</code> fails with <code>Cannot read properties of null (reading 'edgesOut')</code></td>
+<td>A bug of npm 10 with the Vitest packages, not a problem of the project; <code>npm install</code> is not affected and is all the tutorial needs. To apply audit fixes, use a newer npm without installing it: <code>npx -y npm@12 audit fix</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>heatmap.py</code>: <code>Skipped … JSON file(s) that are not saved frames</code></td>
+<td>Harmless: other JSON files (e.g.&nbsp;a batch run’s <code>run.json</code>) were among the inputs and were ignored.</td>
+</tr>
+<tr class="even">
+<td><code>heatmap.py</code>: <code>No cells found in …</code> (older versions: <code>IndexError: index 0 is out of bounds</code>)</td>
+<td>The files or folders you passed hold no saved frames: check the path and the wildcard, e.g.&nbsp;<code>~/Downloads/*_bacteria_state_*.json</code>, or pass a run’s <code>frames</code> folder.</td>
+</tr>
+<tr class="odd">
+<td>The shell says <code>no matches found</code> or <code>No such file or directory</code> for the wildcard</td>
+<td>No file matches the pattern: check the download folder and the simulation name in the pattern.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
