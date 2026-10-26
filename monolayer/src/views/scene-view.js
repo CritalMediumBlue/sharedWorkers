@@ -7,7 +7,7 @@
 
 import { connectToWorker } from '../lib/worker-client.js';
 import { THREE, OrbitControls } from '../rendering/vendor.js';
-import { setupStage } from '../rendering/stage.js';
+import { setupStage, createRenderScheduler } from '../rendering/stage.js';
 import { setupCapsulePool, updateCapsules, setBacterialColor } from '../rendering/capsulePool.js';
 import { setupMesh, updateSurfaceMesh, calculateColor } from '../rendering/mesh.js';
 import { CONFIG } from '../config.js';
@@ -19,6 +19,14 @@ export function mountSceneView(workerName) {
     let latestBacteria = null;
     let latestConcentration = null;
     let ready = false;
+
+    // Render on demand: new data only marks what changed and requests a frame; the
+    // frame updates what changed and draws once. Nothing is recomputed or drawn while
+    // neither the data nor the camera nor a visualization setting changes.
+    let capsulesDirty = false;
+    let meshDirty = false;
+    let resizeListening = false;
+    const requestRender = createRenderScheduler(renderFrame);
 
     // Visualization settings (controlled by controller's Visualization tab)
     let capsuleVisibility = true;
@@ -50,10 +58,14 @@ export function mountSceneView(workerName) {
 
             case 'state:bacteria':
                 latestBacteria = msg.data;
+                capsulesDirty = true;
+                requestRender();
                 break;
 
             case 'state:concentrations':
                 latestConcentration = msg.data;
+                meshDirty = true;
+                requestRender();
                 break;
 
             case 'state:coloringRule':
@@ -98,7 +110,18 @@ export function mountSceneView(workerName) {
         // Create the HTML canvas scale bar overlay
         setupScaleBar();
 
+        // Redraw when the camera moves (controls without damping only change on input)
+        // and when the window is resized
+        stage.camera.controls.addEventListener('change', requestRender);
+        if (!resizeListening) {
+            window.addEventListener('resize', requestRender);
+            resizeListening = true;
+        }
+
         ready = true;
+        capsulesDirty = latestBacteria !== null;
+        meshDirty = latestConcentration !== null;
+        requestRender();
     }
 
     // ── Scale bar ──────────────────────────────────────────────────────────
@@ -182,7 +205,8 @@ export function mountSceneView(workerName) {
         Object.entries(rule).forEach(([species, color]) => {
             setBacterialColor(species, color);
         });
-        updateCapsules(latestBacteria, THREE, capsules, capsuleVisibility);
+        capsulesDirty = true;
+        requestRender();
     }
 
     // ── Viz commands ───────────────────────────────────────────────────────
@@ -195,16 +219,14 @@ export function mountSceneView(workerName) {
             case 'setMeshVisible':
                 if (mesh) mesh.visible = value;
                 if (scaleBarCanvas) scaleBarCanvas.style.display = value ? 'block' : 'none';
-                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
+                meshDirty = true;
                 break;
             case 'selectSpecies':
                 // Species selection is handled by the worker for concentration publishing
                 break;
             case 'setCapsuleVisibility':
                 capsuleVisibility = value;
-                if (latestBacteria) {
-                    updateCapsules(latestBacteria, THREE, capsules, capsuleVisibility);
-                }
+                capsulesDirty = true;
                 break;
             case 'visibleGridAndAxes':
                 if (helperGrid) helperGrid.visible = value;
@@ -212,32 +234,35 @@ export function mountSceneView(workerName) {
                 break;
             case 'setMeshScale':
                 meshScale = value;
-                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
+                meshDirty = true;
                 break;
             case 'translateMesh':
                 meshTranslationZ = value;
-                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
+                meshDirty = true;
                 break;
             case 'setColorMultiplier':
                 colorMultiplier = value;
                 // Force scale bar redraw on next frame
                 lastScaleBarColorMultiplier = null;
-                updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
+                meshDirty = true;
                 break;
         }
+        requestRender();
     }
 
-    // ── Render loop ──────────────────────────────────────────────────────
+    // ── Rendering (on demand) ────────────────────────────────────────────
 
-    function animate() {
-        requestAnimationFrame(animate);
+    function renderFrame() {
         if (!ready) return;
 
-        if (latestBacteria) {
+        if (capsulesDirty) {
+            capsulesDirty = false;
             updateCapsules(latestBacteria, THREE, capsules, capsuleVisibility);
         }
 
-        if (latestConcentration && mesh && mesh.visible) {
+        // A hidden mesh stays marked as changed until it is shown
+        if (meshDirty && latestConcentration && mesh && mesh.visible) {
+            meshDirty = false;
             updateSurfaceMesh(mesh, latestConcentration.conc, meshScale, meshTranslationZ, colorMultiplier);
 
             // Update scale bar only when the range or colorMultiplier changes
@@ -262,6 +287,4 @@ export function mountSceneView(workerName) {
 
         stage.renderer.render(stage.scene, stage.camera);
     }
-
-    animate();
 }

@@ -10,19 +10,31 @@ export const setBacterialColor = (species, color) => {
     coloringRule[species] = color;
 };
 
+// Colour channel 0–255 as three.js parses it from a CSS rgb() string:
+// rounded to an integer and capped at 255 (and at 0 below)
+const channel = (value) => Math.min(255, Math.max(0, Math.round(value))) / 255;
+
+// Scratch values reused for every cell, so that colouring allocates nothing
+const rgba = { r: 0, g: 0, b: 0, alpha: 0 };
+
 const getColor = (cytoplasmicconcentrations) => {
     let newRed = 0;
     let newGreen = 0;
     let newBlue = 0;
     let newAlpha = 0;
-    Object.keys(cytoplasmicconcentrations).forEach(species => {
-        newRed   += coloringRule[species].r * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
-        newGreen += coloringRule[species].g * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
-        newBlue  += coloringRule[species].b * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
-        newAlpha += coloringRule[species].a * cytoplasmicconcentrations[species] * coloringRule[species].intensity;
-    });
-
-    return [`rgb(${Math.round(newRed)}, ${Math.round(newGreen)}, ${Math.round(newBlue)})`, newAlpha / 2];
+    for (const species in cytoplasmicconcentrations) {
+        const rule = coloringRule[species];
+        const weight = cytoplasmicconcentrations[species] * rule.intensity;
+        newRed   += rule.r * weight;
+        newGreen += rule.g * weight;
+        newBlue  += rule.b * weight;
+        newAlpha += rule.a * weight;
+    }
+    rgba.r = channel(newRed);
+    rgba.g = channel(newGreen);
+    rgba.b = channel(newBlue);
+    rgba.alpha = newAlpha / 2;
+    return rgba;
 };
 
 /**
@@ -52,13 +64,10 @@ export function populateMapCaches(BACTERIUM, THREE, capsuleGeometryCache, edgesG
  * Updates the color of a capsule based on cytoplasm concentrations
  */
 export function updateCapsuleColor(capsule, THREE, cytoplasmConcentrations) {
-        const color = getColor(cytoplasmConcentrations);
-        const threeColor = new THREE.Color(color[0]);
-
-        capsule.material.color.copy(threeColor);
-        capsule.material.opacity = color[1];
-        capsule.children[0].material.color.copy(threeColor.clone().multiplyScalar(0.1));
-        capsule.renderOrder = 0;
-
-    
+    const { r, g, b, alpha } = getColor(cytoplasmConcentrations);
+    // Same colour as parsing `rgb(…)` (sRGB input), without building and parsing a string
+    capsule.material.color.setRGB(r, g, b, THREE.SRGBColorSpace);
+    capsule.material.opacity = alpha;
+    capsule.children[0].material.color.copy(capsule.material.color).multiplyScalar(0.1);
+    capsule.renderOrder = 0;
 }

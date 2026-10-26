@@ -22,20 +22,24 @@ const edgesGeometryCache = new Map();
  */
 export function setupCapsulePool(stage, BACTERIUM, THREE, capsules) {
     const poolSize = BACTERIUM.INITIAL_POOL_SIZE*2;
-    
-    // Create capsule objects until we reach the desired pool size
+
+    // Geometry caches for the different capsule lengths, shared by all capsules
+    if (capsuleGeometryCache.size === 0) {
+        populateMapCaches(BACTERIUM, THREE, capsuleGeometryCache, edgesGeometryCache);
+    }
+
+    // Create capsule objects until we reach the desired pool size. They start with
+    // the shared geometry of the shortest length (no per-capsule geometry to build
+    // and throw away); only the materials are per capsule, for the per-cell colour.
     while (capsules.length < poolSize) {
-        const capsuleGeometry = new THREE.CapsuleGeometry();
         const capsuleMaterial = new THREE.MeshBasicMaterial();
         capsuleMaterial.transparent = true;
-        
-        const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-        
+        const capsule = new THREE.Mesh(capsuleGeometryCache.get(1), capsuleMaterial);
+
         // Add wireframe outline to capsule
-        const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
         const wireframeMaterial = new THREE.LineBasicMaterial({});
-        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        
+        const wireframe = new THREE.LineSegments(edgesGeometryCache.get(1), wireframeMaterial);
+
         capsule.add(wireframe);
         capsules.push(capsule);
     }
@@ -45,9 +49,6 @@ export function setupCapsulePool(stage, BACTERIUM, THREE, capsules) {
         stage.scene.add(capsule);
     });
 
-    // Initialize geometry caches for different capsule sizes
-    populateMapCaches(BACTERIUM, THREE, capsuleGeometryCache, edgesGeometryCache);
-    
     return capsules;
 }
 
@@ -80,9 +81,7 @@ export function updateCapsules(bacteriaData, THREE, capsules, capsuleVisibility)
             longAxis, 
             cytoplasmConcentrations } = bacterium;
    
-        const threePosition = new THREE.Vector3(x, y, 0);
-       
-        capsule.position.set(threePosition.x, threePosition.y, 0);
+        capsule.position.set(x, y, 0);
         capsule.rotation.z = angle * Math.PI;  
         updateCapsuleGeometry(capsule, longAxis);
         updateCapsuleColor(capsule, THREE, cytoplasmConcentrations);
@@ -200,17 +199,15 @@ export function updateCapsulesPCA(bacteriaData, THREE, capsules, capsuleVisibili
  * @param {number} longAxis - The length value to determine which geometry to use
  */
 function updateCapsuleGeometry(capsule, longAxis) {
-    // Get cached geometry for this length
-    let newGeometry = capsuleGeometryCache.get(longAxis);
-    let newWireframeGeometry = edgesGeometryCache.get(longAxis);
+    // Cached geometries exist for the integer lengths 1–29
+    const length = Math.min(29, Math.max(1, Math.round(longAxis)));
+    const newGeometry = capsuleGeometryCache.get(length);
 
-    // Update geometry if different from current
+    // Swap to the shared geometry of this length. The geometries are shared by
+    // all capsules, so they must not be disposed here: disposing would free GPU
+    // buffers that other capsules still use and force a re-upload.
     if (capsule.geometry !== newGeometry) {
-        capsule.geometry.dispose();
         capsule.geometry = newGeometry;
-
-        const wireframe = capsule.children[0];
-        wireframe.geometry.dispose();
-        wireframe.geometry = newWireframeGeometry;
+        capsule.children[0].geometry = edgesGeometryCache.get(length);
     }
 }

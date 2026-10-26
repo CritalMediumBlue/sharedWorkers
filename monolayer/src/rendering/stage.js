@@ -28,6 +28,28 @@ export function setupStage(SCENE, THREE, OrbitControls, stage, mesh, capsules) {
     return stage;
 }
 
+/**
+ * Render on demand: returns a function that schedules `renderFrame` for the next
+ * animation frame. Calling it several times before that frame schedules it once,
+ * so a burst of changes (new data, camera input, settings) costs one frame.
+ *
+ * @param {() => void} renderFrame - Updates what changed and draws the scene once
+ * @returns {() => void} requestRender
+ */
+export function createRenderScheduler(renderFrame) {
+    let scheduled = false;
+    const run = () => {
+        scheduled = false;
+        renderFrame();
+    };
+    return () => {
+        if (!scheduled) {
+            scheduled = true;
+            requestAnimationFrame(run);
+        }
+    };
+}
+
 // ─── Renderer ───────────────────────────────────────────────────────────────
 
 function createRenderer(THREE, ratio = 1) { //ratio 

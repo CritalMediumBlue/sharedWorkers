@@ -1,7 +1,7 @@
 
 import { connectToWorker } from '../lib/worker-client.js';
 import { THREE, OrbitControls } from '../rendering/vendor.js';
-import { setupStage } from '../rendering/stage.js';
+import { setupStage, createRenderScheduler } from '../rendering/stage.js';
 import { setupCapsulePool, updateCapsulesPCA, setBacterialColor, resetPCAs } from '../rendering/capsulePool.js';
 import { CONFIG } from '../config.js';
 
@@ -24,7 +24,13 @@ export function mountPhasePortraitView(workerName) {
     let helperGridyz = null;
     let helperGridxz = null;
     let helperAxes = null;
-    let updateScaleLabels = false; 
+    let updateScaleLabels = false;
+
+    // Render on demand (see scene-view.js): new data marks the capsules as changed
+    // and requests one frame; camera input and resizes request a redraw.
+    let capsulesDirty = false;
+    let resizeListening = false;
+    const requestRender = createRenderScheduler(renderFrame);
 
 
     // ── Worker connection ──
@@ -43,6 +49,8 @@ export function mountPhasePortraitView(workerName) {
 
             case 'state:bacteria':
                 latestBacteria = msg.data;
+                capsulesDirty = true;
+                requestRender();
                 break;
 
             case 'state:coloringRule':
@@ -110,8 +118,16 @@ export function mountPhasePortraitView(workerName) {
         // Min labels are always 0
         const minLabel = createAxisLabel('0.00', { x: 0, y: 0, z: 0 });
         stage.scene.add(minLabel);
-   
+
+        stage.camera.controls.addEventListener('change', requestRender);
+        if (!resizeListening) {
+            window.addEventListener('resize', requestRender);
+            resizeListening = true;
+        }
+
         ready = true;
+        capsulesDirty = latestBacteria !== null;
+        requestRender();
     }
 
     function applyColoringRule(rule) {
@@ -120,15 +136,16 @@ export function mountPhasePortraitView(workerName) {
         });
         // Trigger a label refresh on next frame
         updateScaleLabels = true;
-        updateCapsulesPCA(latestBacteria, THREE, capsules, capsuleVisibility, CONFIG.PHASE_PORTRAIT.CAPSULE_SCALE);
+        capsulesDirty = true;
+        requestRender();
     }
 
-    // ── Render loop ──
-    function animate() {
-        requestAnimationFrame(animate);
+    // ── Rendering (on demand) ──
+    function renderFrame() {
         if (!ready) return;
 
-        if (latestBacteria) {
+        if (capsulesDirty && latestBacteria) {
+            capsulesDirty = false;
             const newMaxs = updateCapsulesPCA(latestBacteria, THREE, capsules, capsuleVisibility, CONFIG.PHASE_PORTRAIT.CAPSULE_SCALE);
 
             if (newMaxs) {
@@ -150,8 +167,6 @@ export function mountPhasePortraitView(workerName) {
 
         stage.renderer.render(stage.scene, stage.camera);
     }
-
-    animate();
 
     function updateAxesLabels(maxConcentrations) {
         if (spriteX_max) stage.scene.remove(spriteX_max);
