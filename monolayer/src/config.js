@@ -24,6 +24,11 @@ export const CONFIG = {
         HEIGHT: 120,
         dx: 0.5
     },
+    DATA: {
+        // Subtracted from the y coordinates of the trajectory files, so that the
+        // tracked colony lies on the grid (LowRes.json and HighRes.json)
+        Y_OFFSET: 170
+    },
     PHASE_PORTRAIT: {
         FOG_COLOR: 0x0f0000,
         FOG_NEAR: 1,

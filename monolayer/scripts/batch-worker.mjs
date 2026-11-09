@@ -13,9 +13,12 @@ import path from 'node:path';
 import { createBacteriumSystem, updateSimulation } from '../src/simulation/simulationManager.js';
 import { createSeededMath, evaluateEquations } from '../src/simulation/equations.js';
 import { CONFIG } from '../src/config.js';
+import { doublingTimeMinutes } from '../src/simulation/stateManager.js';
+import { offGridCount } from '../src/simulation/signalling.js';
+import { orphanCount } from '../src/simulation/intracellular/cytoplasmState.js';
 import { frameCells, frameCount as countFrames } from '../src/simulation/trajectories.js';
 
-const { run, equationsText, trajectories, startFrame, minutesPerStep, saveEvery, saveFrom, runDir, metadata } = workerData;
+const { run, equationsText, trajectories, startFrame, averageLifetime, saveEvery, saveFrom, runDir, metadata } = workerData;
 const frameCount = countFrames(trajectories);
 
 /** The cells of frame f (relative to startFrame), in the format of dataProcessor.js. */
@@ -25,13 +28,16 @@ const seeded = createSeededMath(run.seed);
 const { vars, params } = evaluateEquations(equationsText, seeded.math);
 // Engine settings with defaults in the engine, valid even when the equations file
 // does not define them
-const ENGINE_PARAMS = ['DIFFUSION_STEADY_TOLERANCE'];
+const ENGINE_PARAMS = ['DIFFUSION_STEADY_TOLERANCE', 'DOUBLING_TIME_MINUTES'];
 const unknown = Object.keys(run.overrides).filter((name) => !(name in params) && !ENGINE_PARAMS.includes(name));
 if (unknown.length) throw new Error(`Unknown parameter(s) in the run configuration: ${unknown.join(', ')}`);
 Object.assign(params, run.overrides);
 if (!Number.isFinite(params.TIME_SCALE_SECONDS)) {
     throw new Error('The equations file must define params.TIME_SCALE_SECONDS (seconds per time unit of the equations).');
 }
+// Frame duration from this run's own alpha (or DOUBLING_TIME_MINUTES)
+const doublingTime = doublingTimeMinutes(params);
+const minutesPerStep = doublingTime / averageLifetime;
 
 // frames in their own folder, so that tools reading every *.json of a folder
 // (e.g. the thesis' scripts/heatmap.py) do not pick up run.json
@@ -40,6 +46,7 @@ mkdirSync(framesDir, { recursive: true });
 const startedAt = new Date();
 const writeRunInfo = (extra) => writeFileSync(path.join(runDir, 'run.json'), JSON.stringify({
     name: run.name, seed: run.seed, overrides: run.overrides, params, ...metadata,
+    doublingTimeMinutes: doublingTime, minutesPerStep, grid: CONFIG.GRID, dataYOffset: CONFIG.DATA.Y_OFFSET,
     startedAt: startedAt.toISOString(), ...extra,
 }, null, 2));
 writeRunInfo({ status: 'running' });
@@ -60,5 +67,8 @@ for (let f = 0; f < frameCount; f++) {
 }
 
 const seconds = (Date.now() - startedAt.getTime()) / 1000;
-writeRunInfo({ status: 'finished', finishedAt: new Date().toISOString(), durationSeconds: seconds });
+writeRunInfo({
+    status: 'finished', finishedAt: new Date().toISOString(), durationSeconds: seconds,
+    offGridObservations: offGridCount(), cellsWithoutSimulatedParent: orphanCount(),
+});
 parentPort.postMessage({ type: 'done', seconds });

@@ -5,6 +5,7 @@ import { reactionHalfStep } from './intracellular/cytoplasmUpdater.js';
 import * as signalling from './signalling.js';
 import { createSeededMath, evaluateEquations } from './equations.js';
 import { packTrajectories, frameCells, frameCount } from './trajectories.js';
+import { doublingTimeMinutes } from './stateManager.js';
 
 const config = { GRID: { WIDTH: 4, HEIGHT: 3 } };
 
@@ -156,5 +157,83 @@ describe('packed trajectories', () => {
     it('survives structured cloning, as when sent to a worker', () => {
         const copy = structuredClone(packTrajectories(processed));
         expect(frameCells(copy, 1)).toEqual(processed.bacteriaTimeSeries[1]);
+    });
+});
+
+describe('time steps of a frame', () => {
+    // One sender, no uptake (Kin = 0), closed grid: the molecules on the grid must
+    // equal Kout times the simulated time, whatever the step sizes
+    const grid = { GRID: { WIDTH: 20, HEIGHT: 12, dx: 0.5 } };
+    const cells = [{ id: 1, x: 0, y: 0, angle: 0, longAxis: 2 }];
+    const molecules = (seconds, odeStep, adiStep) => {
+        signalling.setModel(
+            { Kin: 0, Kout: 2.2, DiffusionRate: 40, ODE_TIME_STEP: odeStep, ADI_TIME_STEP: adiStep, DIFFUSION_STEADY_TOLERANCE: 0 },
+            { int: { sender: { val: () => 1, eq: () => 0 } }, ext: { S: { val: () => 0, eq: (vars, params) => params.Kout } } },
+            grid, cells, { 1: 0 });
+        const { concentrations } = signalling.updateSignallingCircuit(cells, 12, 20, 0.5, seconds);
+        return concentrations.S.conc.reduce((a, b) => a + b, 0) * 0.5 * 0.5;
+    };
+
+    it('diffuses even when the ODE step is shorter than half an ADI step', () => {
+        expect(molecules(1, 0.05, 0.2)).toBeCloseTo(2.2, 10);
+    });
+
+    it('covers exactly the frame when the steps do not divide it', () => {
+        expect(molecules(1, 0.5, 0.2)).toBeCloseTo(2.2, 10);
+        expect(molecules(1.4, 1, 0.3)).toBeCloseTo(2.2 * 1.4, 10);
+        expect(molecules(101.59, 1, 0.2)).toBeCloseTo(2.2 * 101.59, 8);
+    });
+
+    it('rejects a missing time step', () => {
+        expect(() => molecules(1, undefined, 0.2)).toThrow(/ODE_TIME_STEP/);
+    });
+});
+
+describe('cells without a simulated parent', () => {
+    it('start from the initial condition instead of NaN', () => {
+        const grid = { GRID: { WIDTH: 20, HEIGHT: 12, dx: 0.5 } };
+        const first = [{ id: 1, x: 0, y: 0, angle: 0, longAxis: 2 }];
+        const params = { Kin: 30.6, DiffusionRate: 40, ODE_TIME_STEP: 1, ADI_TIME_STEP: 0.2 };
+        const vars = { int: { G: { val: () => 5, eq: () => 0 } }, ext: { S: { val: () => 0, eq: () => 0 } } };
+        // cell 2 enters later; its parent 99 was never simulated
+        signalling.setModel(params, vars, grid, first, { 1: 0, 2: 99 });
+        const later = [...first, { id: 2, x: 2, y: 1, angle: 0, longAxis: 2 }];
+        const { bacteriaDataUpdated } = signalling.updateSignallingCircuit(later, 12, 20, 0.5, 2);
+        expect(bacteriaDataUpdated.find((c) => c.id === 2).cytoplasmConcentrations.G).toBe(5);
+        expect(cytoplasmState.orphanCount()).toBe(1);
+    });
+});
+
+describe('cells outside the grid', () => {
+    it('are coupled to the nearest edge node, counted and flagged', () => {
+        const grid = { GRID: { WIDTH: 20, HEIGHT: 12, dx: 0.5 } };
+        const cells = [{ id: 1, x: 0, y: 0, angle: 0, longAxis: 2 }, { id: 2, x: -40, y: 0, angle: 0, longAxis: 2 }];
+        const params = { Kin: 30.6, DiffusionRate: 40, ODE_TIME_STEP: 1, ADI_TIME_STEP: 0.2 };
+        const vars = { int: { G: { val: () => 1, eq: () => 0 } }, ext: { S: { val: () => 0, eq: () => 0 } } };
+        signalling.setModel(params, vars, grid, cells, { 1: 0, 2: 0 });
+        const { bacteriaDataUpdated } = signalling.updateSignallingCircuit(cells, 12, 20, 0.5, 1);
+        expect(bacteriaDataUpdated.find((c) => c.id === 1).offGrid).toBeUndefined();
+        expect(bacteriaDataUpdated.find((c) => c.id === 2).offGrid).toBe(true);
+        expect(signalling.offGridCount()).toBe(1);
+    });
+});
+
+describe('doubling time', () => {
+    it('follows from the dilution rate alpha', () => {
+        expect(doublingTimeMinutes({ alpha: 0.000257, TIME_SCALE_SECONDS: 1 })).toBeCloseTo(44.95, 2);
+        expect(doublingTimeMinutes({ alpha: 0.000257 * 60, TIME_SCALE_SECONDS: 60 })).toBeCloseTo(44.95, 2);
+    });
+
+    it('can be given directly when the equations have no alpha', () => {
+        expect(doublingTimeMinutes({ DOUBLING_TIME_MINUTES: 30 })).toBe(30);
+    });
+
+    it('rejects a doubling time that contradicts alpha', () => {
+        expect(() => doublingTimeMinutes({ alpha: 0.000257, DOUBLING_TIME_MINUTES: 30 })).toThrow(/alpha/);
+        expect(doublingTimeMinutes({ alpha: 0.000257, DOUBLING_TIME_MINUTES: 45 })).toBeCloseTo(44.95, 2);
+    });
+
+    it('falls back to 45 min', () => {
+        expect(doublingTimeMinutes({})).toBe(45);
     });
 });

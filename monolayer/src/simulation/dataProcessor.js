@@ -1,4 +1,6 @@
 
+import { CONFIG } from '../config.js';
+
 export function processFileData(fileContent, fallbackTitle = 'Unknown Title') {
     let bacteriaTimeSeries = [];
     let bacteriaLineage;
@@ -17,7 +19,7 @@ export function processFileData(fileContent, fallbackTitle = 'Unknown Title') {
         const bacteriaInTimeSlice= bacteria.map(bacterium => (
             { 
             id: bacterium.id,
-            y: Math.round((bacterium.y - 170)*10)/10,
+            y: Math.round((bacterium.y - CONFIG.DATA.Y_OFFSET)*10)/10,
             x: Math.round(bacterium.x*10)/10,
             angle: Math.round(bacterium.an*50)/50,
             longAxis: Math.round(bacterium.le),

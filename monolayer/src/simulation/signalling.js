@@ -14,9 +14,9 @@ import { reactionHalfStepWithCoupling, reactionHalfStep } from "./intracellular/
 
 // A new model, a reset or a changed parameter (e.g. the diffusion coefficient)
 // invalidates a converged field, even when the sources and sinks are unchanged.
-export const setModel = (...args) => { resetDiffusionSteadyState(); return setModelState(...args); };
+export const setModel = (...args) => { resetDiffusionSteadyState(); resetOffGridCount(); return setModelState(...args); };
 export const setParameter = (...args) => { resetDiffusionSteadyState(); return setParameterState(...args); };
-export const resetModel = (...args) => { resetDiffusionSteadyState(); return resetModelState(...args); };
+export const resetModel = (...args) => { resetDiffusionSteadyState(); resetOffGridCount(); return resetModelState(...args); };
 
 
 function clearConcentrationSources() {
@@ -49,6 +49,7 @@ const calculateResultArray = (currentBacteria) => {
 			y,
 			angle,
 			longAxis,
+			...(offGridCells.has(id) && { offGrid: true }),
 			phenotype: "test",
 			cytoplasmConcentrations,
 			extracellularConcentrations
@@ -57,19 +58,32 @@ const calculateResultArray = (currentBacteria) => {
 	return resultArray;
 };
 
+// Cells whose position lies outside the grid in the current frame. They are kept on
+// the nearest edge node (a few tracking glitches put single cells outside the chamber
+// for one frame), counted, reported once, and flagged as offGrid in the output.
+const offGridCells = new Set();
+let offGridTotal = 0;
+let warnedOffGrid = false;
+
+/** Number of cell observations outside the grid since the model was set. */
+export const offGridCount = () => offGridTotal;
+
+function resetOffGridCount() {
+	offGridTotal = 0;
+	warnedOffGrid = false;
+}
+
 function getAdjustedCoordinates(x, y, HEIGHT, WIDTH, dx) {
 	// Translate coordinates so (0,0) is the bottom-left corner of the grid, then round.
-	let adjustedX = Math.round(-x / dx + WIDTH / 2 - 1);
-	let adjustedY = Math.round(y / dx + HEIGHT / 2);
+	const adjustedX = Math.round(-x / dx + WIDTH / 2 - 1);
+	const adjustedY = Math.round(y / dx + HEIGHT / 2);
 
 	// Clamp to grid bounds
-	if (adjustedY <= 0) adjustedY = 0;
-	if (adjustedX <= 0) adjustedX = 0;
-	if (adjustedY >= HEIGHT) adjustedY = HEIGHT - 1;
-	if (adjustedX >= WIDTH) adjustedX = WIDTH - 1;
+	const clampedX = Math.min(Math.max(adjustedX, 0), WIDTH - 1);
+	const clampedY = Math.min(Math.max(adjustedY, 0), HEIGHT - 1);
 
 	// Calculate the 1D index corresponding to the 2D grid coordinates.
-	return adjustedY * WIDTH + adjustedX;
+	return { idx: clampedY * WIDTH + clampedX, offGrid: clampedX !== adjustedX || clampedY !== adjustedY };
 }
 
 // ─── Skipping the diffusion once the field is at steady state ───────────────
@@ -142,26 +156,51 @@ const positionMap = new Map();
 
 function createPositionMap(currentBacteria, HEIGHT, WIDTH, dx) {
 	positionMap.clear();
+	offGridCells.clear();
 	currentBacteria.forEach(bacterium => {
 		const { x, y, id } = bacterium;
-		const idx = getAdjustedCoordinates(x, y, HEIGHT, WIDTH, dx);
+		const { idx, offGrid } = getAdjustedCoordinates(x, y, HEIGHT, WIDTH, dx);
 		positionMap.set(id, idx);
+		if (offGrid) offGridCells.add(id);
 	});
+	if (offGridCells.size) {
+		offGridTotal += offGridCells.size;
+		if (!warnedOffGrid) {
+			warnedOffGrid = true;
+			console.warn(`${offGridCells.size} cell(s) lie outside the ${WIDTH} × ${HEIGHT} grid; `
+				+ 'they are coupled to the nearest edge node and flagged as offGrid in the output.');
+		}
+	}
+}
+
+/** A positive, finite time step of the equations file, or an error naming it. */
+function timeStepParameter(name) {
+	const value = parameters[name];
+	if (!(Number.isFinite(value) && value > 0)) {
+		throw new Error(`The equations file must define params.${name} as a positive number (got ${value}).`);
+	}
+	return value;
 }
 
 export const updateSignallingCircuit = (currentBacteria, HEIGHT, WIDTH, dx, durationOfOneVEStep) => {
 	// ODE_TIME_STEP and ADI_TIME_STEP are defined in the ODE file (in ODE time units).
 	// Defaults preserve the original dimensional behaviour (2 s and 0.5 s).
-	const timeLapse = parameters.ODE_TIME_STEP;
-	const deltaT = parameters.ADI_TIME_STEP;
+	// They are upper bounds: a frame is split into whole ODE steps and an ODE step into
+	// whole ADI steps, each shortened if needed, so that both cover exactly the
+	// duration of the frame (rounding the counts would diffuse for the wrong time,
+	// or not at all when ODE_TIME_STEP < ADI_TIME_STEP / 2).
+	const maxOdeStep = timeStepParameter('ODE_TIME_STEP');
+	const maxAdiStep = timeStepParameter('ADI_TIME_STEP');
+	const stepsOf = (duration, maxStep) => Math.max(1, Math.ceil(duration / maxStep - 1e-9));
 
-	const numberOfIterations = Math.round(durationOfOneVEStep / timeLapse)
+	const numberOfIterations = stepsOf(durationOfOneVEStep, maxOdeStep);
+	const timeLapse = durationOfOneVEStep / numberOfIterations;
+	const totalNumberOfADIIterations = stepsOf(timeLapse, maxAdiStep);
+	const deltaT = timeLapse / totalNumberOfADIIterations;
 
 	createPositionMap(currentBacteria, HEIGHT, WIDTH, dx);
 
 	setADIProperties(WIDTH, HEIGHT, parameters.DiffusionRate, dx, deltaT);
-
-	const totalNumberOfADIIterations = Math.round(timeLapse / deltaT)
 	const tolerance = parameters.DIFFUSION_STEADY_TOLERANCE ?? DEFAULT_STEADY_TOLERANCE;
 
 	// Prepare state object for ODE integration

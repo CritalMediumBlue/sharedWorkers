@@ -7,7 +7,7 @@
  */
 
 import { createBacteriumSystem, updateSimulation, setParamFromGUI, getGlobalSpeciesConcentrations } from './simulation/simulationManager.js';
-import { createStates, createHistories, createConstants, updateHistories, getHistories, resetHistories } from './simulation/stateManager.js';
+import { createStates, createHistories, createConstants, updateHistories, getHistories, resetHistories, doublingTimeMinutes } from './simulation/stateManager.js';
 import { frameCells, frameCount } from './simulation/trajectories.js';
 import { createSeededMath, evaluateEquations, randomSeed } from './simulation/equations.js';
 import * as physicsManager from './simulation/physics/physicsManager.js';
@@ -110,7 +110,7 @@ function init(packedTrajectories) {
     constants = createConstants();
     createHistories(Object.keys(previusVars.int).length);
     constants.numberOfTimeSteps = frameCount(trajectories);
-    constants.fromStepToMinutes = constants.doublingTime / trajectories.averageLifetime;
+    constants.fromStepToMinutes = doublingTimeMinutes(previusParams) / trajectories.averageLifetime;
     Object.freeze(constants);
 
     resetHistories();
@@ -382,6 +382,14 @@ self.onconnect = (e) => {
             case 'command:setParam':
                 setParamFromGUI(data.paramName, data.value);
                 previusParams[data.paramName] = data.value;
+                // The frame duration follows the doubling time, ln 2 / alpha
+                if (!physicsMode && trajectories && constants
+                    && ['alpha', 'TIME_SCALE_SECONDS', 'DOUBLING_TIME_MINUTES'].includes(data.paramName)) {
+                    constants = Object.freeze({
+                        ...constants,
+                        fromStepToMinutes: doublingTimeMinutes(previusParams) / trajectories.averageLifetime,
+                    });
+                }
                 break;
 
             case 'command:selectSpecies':

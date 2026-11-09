@@ -21,7 +21,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { processFileData } from '../src/simulation/dataProcessor.js';
-import { createConstants } from '../src/simulation/stateManager.js';
+import { doublingTimeMinutes } from '../src/simulation/stateManager.js';
+import { createSeededMath, evaluateEquations } from '../src/simulation/equations.js';
 import { randomSeed } from '../src/simulation/equations.js';
 import { packTrajectories, frameCount } from '../src/simulation/trajectories.js';
 
@@ -70,7 +71,6 @@ console.log(`Reading ${dataPath} …`);
 const processed = processFileData(readFileSync(dataPath, 'utf8'), path.basename(dataPath));
 const startFrame = config.frames?.start ?? 1;   // the browser also starts at frame 1
 const endFrame = Math.min(config.frames?.end ?? processed.bacteriaTimeSeries.length, processed.bacteriaTimeSeries.length);
-const minutesPerStep = createConstants().doublingTime / processed.averageLifetime;
 
 // Frames are saved only from frame `saveFrom` on: the frames before are simulated
 // (the system needs them to reach steady state) but not saved. Default: save all.
@@ -100,6 +100,12 @@ const engineCommit = (() => {
 const equationsText = readFileSync(equationsPath, 'utf8');
 mkdirSync(outDir, { recursive: true });
 
+// Frame duration: the doubling time ln 2 / alpha spread over the average cell
+// lifetime in frames. Each run recomputes it from its own parameters (batch-worker.mjs),
+// so a sweep of alpha changes it; this is the value for the base parameters.
+const minutesPerStep = doublingTimeMinutes({ ...evaluateEquations(equationsText, createSeededMath(1).math).params, ...baseParams })
+    / processed.averageLifetime;
+
 console.log(`${runs.length} run(s) × ${framesToRun} frames (${(minutesPerStep * 60).toFixed(1)} s per frame), `
     + `${Math.min(maxParallel, runs.length)} in parallel → ${outDir}`
     + (saveFrom > startFrame ? `; saving from frame ${saveFrom}` : ''));
@@ -113,7 +119,7 @@ const runOne = (run) => new Promise((resolve) => {
             equationsText,
             trajectories,
             startFrame,
-            minutesPerStep,
+            averageLifetime: processed.averageLifetime,
             saveEvery,
             saveFrom,
             runDir: path.join(outDir, run.name),
@@ -123,7 +129,6 @@ const runOne = (run) => new Promise((resolve) => {
                 frames: { start: startFrame, end: endFrame },
                 saveEvery,
                 saveFrom,
-                minutesPerStep,
                 averageLifetime: processed.averageLifetime,
                 engineCommit,
             },

@@ -15,6 +15,30 @@ export let speciesNames = null;
 export let secretedSpecies = null;
 export let lineage = null;
 
+// Cells that appear without a simulated parent (see inheritConcentrations)
+let orphanCells = 0;
+let warnedOrphan = false;
+
+/** Number of cells that started from the initial condition because they had no simulated parent. */
+export const orphanCount = () => orphanCells;
+
+/**
+ * Initial concentration of an intracellular species, for a cell without a simulated
+ * parent: the initial-condition function of the equations file, as for the cells of
+ * the first frame.
+ */
+export const initialConcentrationForOrphan = (speciesName, ID, parent, isFirstSpecies) => {
+    if (isFirstSpecies) {
+        orphanCells++;
+        if (!warnedOrphan) {
+            warnedOrphan = true;
+            console.warn(`Cell ${ID} has no simulated parent (parent ${parent}); it starts from the initial condition `
+                + 'of the equations file. Further such cells are only counted.');
+        }
+    }
+    return (initialIntConFunct[speciesName] ?? variables.int[speciesName].val)();
+};
+
 
 const setSpeciesNames = (names) => { speciesNames = names; };
 const setSecretedSpecies = (species) => { secretedSpecies = species; };
@@ -146,4 +170,6 @@ export const resetModel = () => {
     // Clear initial concentration function caches
     initialIntConFunct = {};
     initialExtConFunct = {};
+    orphanCells = 0;
+    warnedOrphan = false;
 };

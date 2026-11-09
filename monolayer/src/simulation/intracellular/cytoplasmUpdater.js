@@ -9,6 +9,7 @@ import {
     parameters,
     intEquations,
     extEquations,
+    initialConcentrationForOrphan,
 } from './cytoplasmState.js';
 
 // Global NaN detector - log on first detection (don't throw - we want to see where NaN originates).
@@ -72,6 +73,12 @@ function inheritConcentrations(ID, idx, concentrationsState, state) {
         if (!managerInt.has(ID)) {
             const parent = lineageLocal[ID];
             let defaultVal = managerInt.get(parent);
+            if (defaultVal === undefined) {
+                // No simulated parent (a cell that enters the data without one, or whose
+                // parent was never simulated): start from the initial condition instead
+                // of inheriting an undefined (NaN) state
+                defaultVal = initialConcentrationForOrphan(speciesName, ID, parent, i === 0);
+            }
             throwOnFirstNaN(defaultVal, () => ({
                 stage: 'Concentration inheritance',
                 species: speciesName,
